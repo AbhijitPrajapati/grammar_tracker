@@ -1,40 +1,78 @@
 # Grammar Tracker
 
-English learners often face no shortage of feedback in regards to their speaking ability. However, prioritizing recurring mistakes amidst large volumes of feedback is a prevailing issue among many learning to speak. This application is a practical tool for English learners to not only recieve grammatical feedback, but also repair recurring issues overtime. Users record short samples of speech, which are transcribed and analyzed for grammatical inaccuracies. A persistant log of errors is constructed overtime, which the system uses to provide a long-term overview of users' improvement through error trends across multiple timeframes and error categories.
+English learners often face no shortage of substantial grammatical feedback. Nonetheless, identifying and prioritizing recurring mistakes across many speaking attempts remains inconvenient. This full-stack language-learning application targets this issue by seamlessly maintaining a persistent record of grammatical errors in order to characterize a learner's progress over time.
 
-# Features
+Users submit short speech samples, which are transcribed and analyzed for grammatical inaccuracies. Detected errors are categorized, explained, and stored, allowing the system to identify long-term trends across grammatical categories and multiple timeframes. 
 
-## User Authentication
+## Processing Pipeline
 
-- Basic user authentication
-- Access to personal error analytics and speech history
+1. User submits a speech sample.
+2. Audio is transcribed.
+3. Transcript is analyzed for grammatical innaccuracies.
+4. Detected errors are categorized, explained, and persisted.
+5. Historical error data is aggregated into progress analytics.
 
-## Audio Procesing
+## Features
 
-- Audio submission
-- Transcription
-- Grammer analysis
-- Speech storage
+### Speech Processing
 
-## Grammer Analysis
+- Audio transcription
+- AI-driven grammatical analysis
+- Persistent speech history
+- Clear, concise corrections
+- Error categorization
+- Details explanations for each individual error
 
-Error Information:
-- Original text
-- Corrected text
-- Error category
-- Explanation 
-- Timestamp
+### Analytics
 
-## Analytics
+- Persistent error history
+- Error distribution by category
+- Error frequency trends over time
+- Weekly, monthly, yearly, and all-time statistics
 
-- Multiple timeframes: all-time, yearly, monthly, weekly
-- Total errors and speeches
-- Error distribution
-- Error frequency graph by category
+### Authentication
 
-# Technical Backend Architecture
+- Complete User registration and authentication flow
+- Personally-contained speech history and analytics
 
+## Architecture
+
+```text
+Next.js
+   |
+   v
+FastAPI
+   |
+   +----> OpenAI Transcription
+   |
+   +----> OpenAI Text Analysis
+   |
+   v
+PostgreSQL
+```
+
+The frontend, backend, and database are deployed independently. The FastAPI service manages authentication, speech processing, grammatical analysis, persistence, and analytics, while Next.js presents an elegant user experience.
+
+## Technologies
+
+**Frontend**
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+
+**Backend**
+- Python
 - FastAPI
-- Faster-whisper (local audio transcription)
-- Open AI API (grammar analysis)
+- SQLAlchemy
 - PostgreSQL
+
+**Machine Learning Services**
+- OpenAI API for speech transcription and text analysis
+
+## Project Scope
+
+Grammar Tracker is a comprehensive end-to-end machine learning application rather than an isolated model demonstration. Integrating ML services with surrounding infrastructure, it includes user data persistence, a tested backend API, a complete web interface, and a stable production environment.
+
+This application is currently feature-complete and deployed.
