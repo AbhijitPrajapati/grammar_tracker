@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: grammar_tracker_e2e
+      POSTGRES_PASSWORD: grammar_tracker_e2e
+      POSTGRES_DB: grammar_tracker_e2e
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U grammar_tracker_e2e -d grammar_tracker_e2e",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  backend:
+    build: ./backend
+    command:
+      [
+        "sh",
+        "-c",
+        "uv run alembic upgrade head && exec uv run uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      ]
+    environment:
+      E2E_TESTING: "true"
+      POSTGRES__URL: postgresql+asyncpg://grammar_tracker_e2e:grammar_tracker_e2e@postgres:5432/grammar_tracker_e2e
+      OPENAI__API_KEY: e2e-placeholder-key
+      OPENAI__TEXT_MODEL: e2e-placeholder-model
+      OPENAI__TRANSCRIPTION_MODEL: e2e-placeholder-model
+      JWT__SECRET: e2e-only-secret-that-is-not-used-outside-tests
+      JWT__ALGORITHM: HS256
+      JWT__EXPIRATION_MINUTES: 60
+      ANALYSIS_QUOTA__MINUTE_LIMIT: 3
+      ANALYSIS_QUOTA__DAY_LIMIT: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'uv run python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:8000/openapi.json'', timeout=2)"',
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://backend:8000
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "3100:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/auth').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30

@@ -15,3 +15,4 @@ class InfrastructureSettings(DatabaseSettings):
     openai: OpenAIConfig
     jwt: JwtConfig
     analysis_quota: PyRateLimiterConfig
+    e2e_testing: bool = False
