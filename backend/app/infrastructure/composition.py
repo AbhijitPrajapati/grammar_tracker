@@ -8,6 +8,7 @@ from .database import (
 from .grammar_analysis import OpenAIGrammarAnalysisAdapter
 from .logging import logging_setup
 from .password_hasher import PwdLibPasswordHasher
+from .quota import PyRateLimiterAnalysisQuotaEnforcer
 from .token_service import JwtTokenService
 
 
@@ -20,6 +21,9 @@ class InfrastructureComposition:
         self.grammar_analyzer = OpenAIGrammarAnalysisAdapter(settings.openai)
         self.password_hasher = PwdLibPasswordHasher()
         self.token_service = JwtTokenService(settings.jwt)
+        self.analysis_quota_enforcer = PyRateLimiterAnalysisQuotaEnforcer(
+            settings.analysis_quota
+        )
 
     async def close(self) -> None:
         await self.engine.dispose()

@@ -12,6 +12,7 @@ dependencies = [
     "psycopg>=3.3.4",
     "pwdlib[argon2]>=0.3.0",
     "pyjwt>=2.13.0",
+    "pyrate-limiter>=4.5.0",
     "sqlalchemy>=2.0.51",
 ]
 

@@ -6,7 +6,7 @@ from app.domain.analysis import Analysis
 
 
 class AnalysisQuotaExhausted(Exception):
-    """Raised by the grammar analyzer when quota is reached"""
+    """Raised by the grammar analyzer when quota is reached, and by the quote enforcer"""
 
 
 class PasswordHasher(Protocol):
@@ -21,3 +21,7 @@ class TokenService(Protocol):
 
 class GrammarAnalyzer(Protocol):
     async def analyze(self, audio: AudioSample) -> tuple[str, Analysis]: ...
+
+
+class AnalysisQuotaEnforcer(Protocol):
+    async def try_consume(self, user_id: UUID) -> bool: ...

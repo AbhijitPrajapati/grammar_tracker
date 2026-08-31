@@ -42,6 +42,7 @@ class ApplicationContainer:
         self.process_speech = ProcessSpeech(
             self.infrastructure.uow_factory,
             self.infrastructure.grammar_analyzer,
+            self.infrastructure.analysis_quota_enforcer,
         )
 
     async def close(self) -> None:
