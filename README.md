@@ -76,24 +76,6 @@ The frontend, backend, and database are deployed independently. The FastAPI serv
 
 ## Project Scope
 
-Grammar Tracker is a comprehensive end-to-end machine learning application rather than an isolated model demonstration. Integrating ML services with surrounding infrastructure, it includes user data persistence, a tested backend API, a complete web interface, and a stable production environment.
+Grammar Tracker is a comprehensive end-to-end machine learning application rather than an isolated model demonstration. Integrating ML services with surrounding infrastructure, it includes user data persistence, a complete web interface, a stable production environment, and end-to-end testing.
 
 This application is currently feature-complete and deployed.
-
-## Browser Tests
-
-The minimum end-to-end suite runs against an isolated Docker stack with
-PostgreSQL. The normal FastAPI entry point runs with `E2E_TESTING=true`, which
-selects a deterministic grammar analyzer without calling OpenAI or reusing
-development data.
-
-Run the complete suite before pushing (it uses the locally installed stable
-Chrome browser):
-
-```text
-cd frontend
-npm run test:e2e
-```
-
-Pass Playwright options after `--`, for example
-`npm run test:e2e -- --ui`.
