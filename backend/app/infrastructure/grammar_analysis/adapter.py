@@ -1,4 +1,4 @@
-from openai import OpenAI, RateLimitError
+from openai import AsyncOpenAI, RateLimitError
 from pydantic import BaseModel
 
 from app.application.contracts.audio import AudioSample
@@ -37,14 +37,14 @@ class OpenAIGrammarAnalysisAdapter(GrammarAnalyzer):
         self.text_model = config.text_model
         self.transcription_model = config.transcription_model
         api_key = config.api_key.get_secret_value()
-        self.client = OpenAI(api_key=api_key)
+        self.client = AsyncOpenAI(api_key=api_key)
 
     async def analyze(self, audio: AudioSample) -> tuple[str, Analysis]:
         try:
-            transcription = self.client.audio.transcriptions.create(
+            transcription = await self.client.audio.transcriptions.create(
                 model=self.transcription_model, file=(audio.filename, audio.content)
             )
-            response = self.client.responses.parse(
+            response = await self.client.responses.parse(
                 model=self.text_model,
                 input=[
                     {
