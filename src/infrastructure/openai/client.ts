@@ -1,12 +1,8 @@
 import "server-only";
 
-import OpenAI, {
-  APIConnectionError,
-  APIError,
-  RateLimitError,
-} from "openai";
+import OpenAI, { APIConnectionError, APIError, RateLimitError } from "openai";
 
-import { AnalysisQuotaExhausted } from "@/src/application/errors";
+import { InferenceQuotaReached } from "@/src/application/errors";
 import { getLogger } from "../observability/logger";
 
 export interface OpenAiClientOptions {
@@ -30,7 +26,6 @@ export class OpenAiClient {
       apiKey: options.apiKey,
       baseURL: options.baseUrl,
       timeout: options.timeoutMs,
-      // Streams must be reopened for a retry, so adapters own retry behavior.
       maxRetries: 0,
     });
     this.maxRetries = options.maxRetries;
@@ -43,7 +38,7 @@ export class OpenAiClient {
     const startedAt = Date.now();
     let attempt = 0;
 
-    for (;;) {
+    while (true) {
       try {
         const result = await request();
         getLogger().info(
@@ -72,7 +67,7 @@ export class OpenAiClient {
 
         if (!mayRetry) {
           if (error instanceof RateLimitError) {
-            throw new AnalysisQuotaExhausted(undefined, { cause: error });
+            throw new InferenceQuotaReached(undefined, { cause: error });
           }
           throw error;
         }

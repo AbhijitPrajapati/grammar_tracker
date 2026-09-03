@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
 import {
-  AnalysisQuotaExhausted,
+  InferenceQuotaReached,
   AnalysisQuotaReached,
   AudioSample,
   ChangePassword,
@@ -56,9 +56,7 @@ const account = new UserAccount({
 
 const analysis = new Analysis({
   mistakes: [],
-  frequencies: [
-    { category: "verb_tense", occurrences: 0, opportunities: 2 },
-  ],
+  frequencies: [{ category: "verb_tense", occurrences: 0, opportunities: 2 }],
   feedback: "Well done.",
 });
 
@@ -66,7 +64,9 @@ function storedUser(passwordHash = "hash:old-password"): StoredUser {
   return { account, passwordHash };
 }
 
-function userRepository(overrides: Partial<UserRepository> = {}): UserRepository {
+function userRepository(
+  overrides: Partial<UserRepository> = {},
+): UserRepository {
   return {
     create: async (email, passwordHash) => ({
       account: new UserAccount({ id: USER_ID, email, createdAt: CREATED_AT }),
@@ -87,8 +87,7 @@ const passwordHasher: PasswordHasher = {
 
 const tokenService: TokenService = {
   issue: async (userId) => `token:${userId}`,
-  verify: async (token) =>
-    token === `token:${USER_ID}` ? USER_ID : null,
+  verify: async (token) => (token === `token:${USER_ID}` ? USER_ID : null),
 };
 
 function speechRepository(
@@ -144,7 +143,11 @@ describe("authentication use cases", () => {
       create: async (email, passwordHash) => {
         persistedHash = passwordHash;
         return {
-          account: new UserAccount({ id: USER_ID, email, createdAt: CREATED_AT }),
+          account: new UserAccount({
+            id: USER_ID,
+            email,
+            createdAt: CREATED_AT,
+          }),
           passwordHash,
         };
       },
@@ -358,7 +361,7 @@ describe("speech use cases", () => {
       speechRepository(),
       {
         transcribe: async () => {
-          throw new AnalysisQuotaExhausted();
+          throw new InferenceQuotaReached();
         },
       },
       { analyze: async () => analysis },

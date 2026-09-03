@@ -9,6 +9,7 @@ export class EmailAddress {
     const local = normalized.slice(0, separator);
     const domain = normalized.slice(separator + 1);
 
+    // Validate email address
     if (separator < 0 || local.length === 0 || !domain.includes(".")) {
       throw new TypeError("Invalid email address");
     }
@@ -30,6 +31,7 @@ export class NewPassword {
 
   constructor(value: string) {
     const length = Array.from(value).length;
+    // Validate password lengths
     if (length < NewPassword.MIN_LENGTH || length > NewPassword.MAX_LENGTH) {
       throw new RangeError(
         `Password must be between ${NewPassword.MIN_LENGTH} and ${NewPassword.MAX_LENGTH} characters`,
@@ -47,7 +49,8 @@ export interface UserAccountProperties {
   readonly createdAt: Date;
 }
 
-/** Public account state. Credential material deliberately stays outside the domain. */
+// Public account state
+// Credential information stays out of the domain
 export class UserAccount implements UserAccountProperties {
   readonly id: UserId;
   readonly email: EmailAddress;

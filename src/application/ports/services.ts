@@ -21,7 +21,6 @@ export interface GrammarAnalyzer {
 }
 
 export interface AnalysisQuota {
-  /** Returns true only after atomically consuming one analysis attempt. */
   tryConsume(userId: UserId): Promise<boolean>;
 }
 
@@ -40,10 +39,7 @@ export interface StagedAudioStore {
     userId: UserId,
     reference: StagedAudioReference,
   ): Promise<AudioSample>;
-  delete(
-    userId: UserId,
-    reference: StagedAudioReference,
-  ): Promise<void>;
+  delete(userId: UserId, reference: StagedAudioReference): Promise<void>;
 }
 
 export interface StagedAudioCleanupSummary {

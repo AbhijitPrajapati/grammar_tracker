@@ -6,7 +6,7 @@ export const STAGED_AUDIO_ROOT = "speech-staging";
 export const MAX_STAGED_AUDIO_BYTES = AudioSample.MAX_CONTENT_BYTES;
 export const MAX_STAGED_AUDIO_BASENAME_LENGTH = 255;
 
-/** Formats accepted by OpenAI's file transcription endpoint. */
+// Extentions allowed by OpenAI transcription
 export const ALLOWED_AUDIO_EXTENSIONS = [
   "flac",
   "mp3",
@@ -21,10 +21,7 @@ export const ALLOWED_AUDIO_EXTENSIONS = [
 
 export type AllowedAudioExtension = (typeof ALLOWED_AUDIO_EXTENSIONS)[number];
 
-/**
- * Canonical and commonly emitted audio MIME types for the supported formats.
- * This list is also suitable for Vercel Blob's `allowedContentTypes` option.
- */
+// MIME types for the allowed extentions
 export const ALLOWED_AUDIO_CONTENT_TYPES = [
   "audio/flac",
   "audio/x-flac",
@@ -42,6 +39,7 @@ export const ALLOWED_AUDIO_CONTENT_TYPES = [
 export type AllowedAudioContentType =
   (typeof ALLOWED_AUDIO_CONTENT_TYPES)[number];
 
+// Mapping from extention to content type
 const CONTENT_TYPES_BY_EXTENSION: Readonly<
   Record<AllowedAudioExtension, readonly AllowedAudioContentType[]>
 > = {
@@ -56,6 +54,7 @@ const CONTENT_TYPES_BY_EXTENSION: Readonly<
   webm: ["audio/webm"],
 };
 
+// Ensure valid strings
 const SAFE_OWNER_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 const SAFE_BASENAME_CHARACTERS = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const OPAQUE_ETAG_CHARACTERS = /^[\x21-\x7e]+$/;
@@ -73,8 +72,7 @@ export interface StagedAudioMetadata {
   readonly contentType: unknown;
 }
 
-export interface ValidatedStagedAudioMetadata
-  extends ValidatedStagedAudioPath {
+export interface ValidatedStagedAudioMetadata extends ValidatedStagedAudioPath {
   readonly etag: string;
   readonly size: number;
   readonly contentType: AllowedAudioContentType;
@@ -227,10 +225,7 @@ export function validateStagedAudioMetadata(
   if (
     typeof metadata.contentType !== "string" ||
     !isAllowedAudioContentType(metadata.contentType) ||
-    !isAudioContentTypeAllowedForExtension(
-      path.extension,
-      metadata.contentType,
-    )
+    !isAudioContentTypeAllowedForExtension(path.extension, metadata.contentType)
   ) {
     throw new InvalidAudio("Invalid staged audio content type");
   }

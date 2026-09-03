@@ -7,10 +7,7 @@ import type {
   TimeSeries,
 } from "@/src/domain/analytics";
 import type { AnalyticsReader } from "@/src/application/ports/repositories";
-import {
-  CategoryFrequency,
-  type MistakeCategory,
-} from "@/src/domain/analysis";
+import { CategoryFrequency, type MistakeCategory } from "@/src/domain/analysis";
 import type { UserId } from "@/src/domain/user";
 
 import { getDatabase } from "./client";
@@ -31,7 +28,7 @@ function speechScope(userId: UserId, dateRange: DateRange): SQL {
 }
 
 function bucketLiteral(bucket: TimeBucket): SQL {
-  // Literals avoid duplicate bind parameters between SELECT and GROUP BY.
+  // Literals avoid duplicate bind parameters between SELECT and GROUP BY
   switch (bucket) {
     case "day":
       return sql.raw("'day'");
@@ -96,8 +93,6 @@ export class PostgresAnalyticsReader implements AnalyticsReader {
     mistakeCategory: MistakeCategory,
     bucket: TimeBucket,
   ): Promise<TimeSeries> {
-    // The timestamptz overload intentionally preserves the database's existing
-    // session-timezone date_trunc behavior.
     const time =
       sql<Date>`date_trunc(${bucketLiteral(bucket)}, ${speeches.createdAt})`.mapWith(
         speeches.createdAt,

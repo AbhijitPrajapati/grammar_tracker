@@ -1,4 +1,4 @@
-import { Analysis, type AnalysisProperties } from "./analysis";
+import { Analysis } from "./analysis";
 import type { UserId } from "./user";
 
 export type SpeechId = string;
@@ -7,7 +7,7 @@ export interface SpeechProperties {
   readonly id: SpeechId;
   readonly userId: UserId;
   readonly transcript: string;
-  readonly analysis: Analysis | AnalysisProperties;
+  readonly analysis: Analysis;
   readonly createdAt: Date;
 }
 
@@ -22,10 +22,7 @@ export class Speech implements SpeechProperties {
     this.id = properties.id;
     this.userId = properties.userId;
     this.transcript = properties.transcript;
-    this.analysis =
-      properties.analysis instanceof Analysis
-        ? properties.analysis
-        : new Analysis(properties.analysis);
+    this.analysis = properties.analysis;
     this.createdAt = new Date(properties.createdAt);
     Object.freeze(this);
   }

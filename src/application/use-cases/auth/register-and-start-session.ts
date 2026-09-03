@@ -1,4 +1,4 @@
-import type { RegisteredSession } from "../../contracts/auth";
+import type { AuthSession } from "../../contracts/auth";
 import { EmailAlreadyRegistered } from "../../errors";
 import {
   EmailConflictError,
@@ -18,7 +18,7 @@ export class RegisterAndStartSession {
   async execute(
     email: EmailAddress,
     password: NewPassword,
-  ): Promise<RegisteredSession> {
+  ): Promise<AuthSession> {
     if ((await this.users.getByEmail(email)) !== null) {
       throw new EmailAlreadyRegistered();
     }
@@ -35,9 +35,6 @@ export class RegisterAndStartSession {
     }
 
     const sessionToken = await this.tokens.issue(storedUser.account.id);
-    return {
-      user: storedUser.account,
-      session: { sessionToken, userId: storedUser.account.id },
-    };
+    return { sessionToken, userId: storedUser.account.id };
   }
 }

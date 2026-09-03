@@ -34,7 +34,7 @@ export async function authenticateAction(
         new EmailAddress(parsed.data.email),
         new NewPassword(parsed.data.password),
       );
-      token = registered.session.sessionToken;
+      token = registered.sessionToken;
     } else {
       const session = await container.login.execute(
         new EmailAddress(parsed.data.email),

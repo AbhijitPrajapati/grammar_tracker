@@ -7,6 +7,7 @@ export interface AudioSampleProperties {
   readonly openStream: () => Promise<ReadableStream<Uint8Array>>;
 }
 
+// Represents the audio sample itself
 export class AudioSample implements AudioSampleProperties {
   static readonly MAX_CONTENT_BYTES = 25 * 1024 * 1024;
 

@@ -1,7 +1,4 @@
-import {
-  AnalysisQuotaExhausted,
-  AnalysisQuotaReached,
-} from "../../errors";
+import { InferenceQuotaReached, AnalysisQuotaReached } from "../../errors";
 import type {
   AnalysisQuota,
   GrammarAnalyzer,
@@ -38,13 +35,12 @@ export class ProcessSpeech {
       const analysis = await this.grammarAnalyzer.analyze(transcript);
       return await this.speeches.create(userId, transcript, analysis);
     } catch (error) {
-      if (error instanceof AnalysisQuotaExhausted) {
+      if (error instanceof InferenceQuotaReached) {
         throw new AnalysisQuotaReached({ cause: error });
       }
       throw error;
     } finally {
-      // Cleanup is best effort because the daily orphan sweep is the durable
-      // fallback. It must not hide a completed analysis or processing error.
+      // Cleanup the audio file
       await this.stagedAudio.delete(userId, reference).catch((error) => {
         this.reportCleanupFailure(error);
       });

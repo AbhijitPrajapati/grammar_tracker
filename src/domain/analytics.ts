@@ -2,6 +2,7 @@ import type { CategoryFrequency, MistakeCategory } from "./analysis";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1_000;
 
+// Null represents an open ended range
 export interface DateRangeProperties {
   readonly start?: Date | null;
   readonly end?: Date | null;
@@ -15,6 +16,7 @@ export class DateRange {
     const start = properties.start ?? null;
     const end = properties.end ?? null;
 
+    // Validate dates
     if (start !== null && Number.isNaN(start.getTime())) {
       throw new TypeError("Date range start must be a valid date");
     }
@@ -58,8 +60,7 @@ export function timeBucketFor(dateRange: DateRange): TimeBucket {
   const duration = dateRange.durationMilliseconds;
   if (duration === null) return "month";
 
-  // Python timedelta.days floors positive partial days, which the previous
-  // implementation's persisted analytics behavior used.
+  // Simple algorithm to get time bucket from date range
   const days = Math.floor(duration / MILLISECONDS_PER_DAY);
   if (days <= 14) return "day";
   if (days <= 90) return "week";
@@ -67,6 +68,7 @@ export function timeBucketFor(dateRange: DateRange): TimeBucket {
   return "year";
 }
 
+// Full analytics results
 export interface AnalyticsDashboard {
   readonly distribution: Distribution;
   readonly timeSeries: TimeSeries;

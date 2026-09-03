@@ -6,12 +6,9 @@ import type {
 } from "@/src/domain/analytics";
 import type { Analysis, MistakeCategory } from "@/src/domain/analysis";
 import type { Speech, SpeechId } from "@/src/domain/speech";
-import type {
-  EmailAddress,
-  UserAccount,
-  UserId,
-} from "@/src/domain/user";
+import type { EmailAddress, UserAccount, UserId } from "@/src/domain/user";
 
+// Domain user + credentials
 export interface StoredUser {
   readonly account: UserAccount;
   readonly passwordHash: string;
@@ -28,7 +25,7 @@ export class EmailConflictError extends Error {
 }
 
 export interface UserRepository {
-  /** May throw EmailConflictError after a concurrent uniqueness collision. */
+  // May throw EmailConflictError
   create(email: EmailAddress, passwordHash: string): Promise<StoredUser>;
   getById(userId: UserId): Promise<StoredUser | null>;
   getByEmail(email: EmailAddress): Promise<StoredUser | null>;
@@ -45,7 +42,11 @@ export interface SpeechRepository {
     transcript: string,
     analysis: Analysis,
   ): Promise<Speech>;
-  list(userId: UserId, limit: number, offset: number): Promise<readonly Speech[]>;
+  list(
+    userId: UserId,
+    limit: number,
+    offset: number,
+  ): Promise<readonly Speech[]>;
   deleteOwned(speechId: SpeechId, userId: UserId): Promise<boolean>;
 }
 

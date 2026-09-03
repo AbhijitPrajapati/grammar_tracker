@@ -1,12 +1,8 @@
-import {
-  APIConnectionError,
-  BadRequestError,
-  RateLimitError,
-} from "openai";
+import { APIConnectionError, BadRequestError, RateLimitError } from "openai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { OpenAiClient } from "@/src/infrastructure/openai/client";
-import { AnalysisQuotaExhausted } from "@/src/application/errors";
+import { InferenceQuotaReached } from "@/src/application/errors";
 
 const logger = vi.hoisted(() => ({
   info: vi.fn(),
@@ -33,7 +29,10 @@ afterEach(() => {
 
 describe("OpenAiClient", () => {
   it("returns response data and records the provider request ID", async () => {
-    const request = vi.fn(async () => ({ data: "transcript", requestId: "req_1" }));
+    const request = vi.fn(async () => ({
+      data: "transcript",
+      requestId: "req_1",
+    }));
 
     await expect(client(0).execute("transcription", request)).resolves.toBe(
       "transcript",
@@ -77,9 +76,9 @@ describe("OpenAiClient", () => {
     );
     const request = vi.fn(async () => Promise.reject(error));
 
-    await expect(
-      client(3).execute("grammar_analysis", request),
-    ).rejects.toBe(error);
+    await expect(client(3).execute("grammar_analysis", request)).rejects.toBe(
+      error,
+    );
     expect(request).toHaveBeenCalledOnce();
   });
 
@@ -95,7 +94,7 @@ describe("OpenAiClient", () => {
       .execute("transcription", async () => Promise.reject(rateLimit))
       .catch((error: unknown) => error);
 
-    expect(caught).toBeInstanceOf(AnalysisQuotaExhausted);
+    expect(caught).toBeInstanceOf(InferenceQuotaReached);
     expect((caught as Error).cause).toBe(rateLimit);
   });
 });
