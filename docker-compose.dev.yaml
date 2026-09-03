@@ -10,7 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./frontend/database/schema.sql:/docker-entrypoint-initdb.d/001-grammar-tracker-schema.sql:ro
+      - ./database/local-bootstrap.sql:/docker-entrypoint-initdb.d/001-grammar-tracker-schema.sql:ro
     healthcheck:
       test:
         [
@@ -23,7 +23,7 @@ services:
 
   app:
     build:
-      context: ./frontend
+      context: .
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-grammar_tracker}:${POSTGRES_PASSWORD:-grammar_tracker}@postgres:5432/${POSTGRES_DB:-grammar_tracker}

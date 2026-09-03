@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: grammar_tracker_e2e
       POSTGRES_DB: grammar_tracker_e2e
     volumes:
-      - ./frontend/database/schema.sql:/docker-entrypoint-initdb.d/001-grammar-tracker-schema.sql:ro
+      - ./database/local-bootstrap.sql:/docker-entrypoint-initdb.d/001-grammar-tracker-schema.sql:ro
     healthcheck:
       test:
         [
@@ -18,7 +18,7 @@ services:
       retries: 15
 
   app:
-    build: ./frontend
+    build: .
     environment:
       DATABASE_URL: postgresql://grammar_tracker_e2e:grammar_tracker_e2e@postgres:5432/grammar_tracker_e2e
       DATABASE_POOL_MAX: 5

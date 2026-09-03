@@ -4,6 +4,9 @@ Grammar Tracker helps English learners see recurring grammar patterns across man
 
 The production system is one Next.js application deployed on Vercel.
 
+For a code-reading order, placement rules, and migration status, see
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 ## Features
 
 - Registration, login, logout, password changes, and account deletion
@@ -50,25 +53,25 @@ Audio processing is sequential and deliberate:
 Frameworks and vendors are implementation details around a framework-free core. Dependencies point inward:
 
 ```text
-app/ and components/                    Next.js delivery and presentation
+app/ and src/presentation               Next.js delivery and presentation
               |
-src/adapters/inbound/next               Server Actions, queries, session boundary
+src/interfaces/next                     Server Actions, queries, session boundary
               |
-src/core/application                    use cases, contracts, ports, expected errors
+src/application                         use cases, contracts, ports, expected errors
               |
-src/core/domain                         entities, value objects, invariants
+src/domain                              entities, value objects, invariants
 
 src/bootstrap/container                the only composition root
               |
-src/adapters/outbound                   PostgreSQL, OpenAI, JWT/Argon2, Redis, Blob
+src/infrastructure                      PostgreSQL, OpenAI, JWT/Argon2, Redis, Blob
 ```
 
 The layers have distinct responsibilities:
 
-- `src/core/domain` owns users, speeches, analytics, grammar analyses, frequencies, mistake categories, their invariants, and the persistence ports belonging to those aggregates. It imports no Next.js, database, SDK, or environment code.
-- `src/core/application` coordinates one business operation per use case. It defines orchestration contracts and external-service ports instead of depending on concrete vendors.
-- `src/adapters/inbound/next` translates form/query/cookie input into use-case calls and serializes results into React-safe view models. Authentication is checked at the server boundary and again through owned repository operations where applicable.
-- `src/adapters/outbound` implements ports using Drizzle/PostgreSQL, OpenAI, `jose`, `argon2`, Upstash Redis, and private Vercel Blob.
+- `src/domain` owns users, speeches, analytics, grammar analyses, frequencies, mistake categories, and their invariants. It imports no outer application layer.
+- `src/application` coordinates complete business operations and owns every port required by those operations.
+- `src/interfaces/next` translates form/query/cookie input into use-case calls and serializes results into React-safe view models. Authentication is checked at the server boundary and again through owned repository operations where applicable.
+- `src/infrastructure` implements ports using Drizzle/PostgreSQL, OpenAI, `jose`, `argon2`, Upstash Redis, and private Vercel Blob.
 - `src/bootstrap/container.ts` is the single composition root. It wires the universal PostgreSQL, Upstash, and Blob adapters and selects only the real or deterministic analysis adapter, never infrastructure from inside the domain.
 - `app` primarily composes Server Components. Client Components are limited to interactive forms, browser uploads, confirmation controls, local-time rendering, and chart/filter behavior.
 
@@ -99,37 +102,29 @@ The application continues to use the existing production objects:
 
 Only analysis document version 2 is supported because that is the sole version present in the live database. Its snake-case persistence shape is validated at every read and write. Domain objects remain camel-case and independent of storage formatting.
 
-Drizzle is a typed query mapper here, not a schema owner. There is no Drizzle migration directory, no automatic migration command, and no DDL during a build, startup, or request. [`frontend/database/schema.sql`](frontend/database/schema.sql) is an exact bootstrap snapshot for new disposable local and E2E databases only. Never run it against production. PostgreSQL executes it only when the Compose data directory is empty.
+Drizzle is a typed query mapper here, not a schema owner. There is no Drizzle migration directory, no automatic migration command, and no DDL during a build, startup, or request. [`database/local-bootstrap.sql`](database/local-bootstrap.sql) is an exact bootstrap snapshot for new disposable local and E2E databases only. It is never used when connecting to the existing Neon database. Never run it against production. PostgreSQL executes it only when a Compose data directory is empty.
 
 ## Project structure
 
 ```text
 grammar_tracker/
+|-- app/                                  Next.js routes and pages
+|-- src/
+|   |-- domain/                           stable business concepts and invariants
+|   |-- application/                      use cases, ports, contracts, errors
+|   |-- infrastructure/                   postgres, OpenAI, auth, quota, Blob, logs
+|   |-- interfaces/next/                  actions, queries, sessions, view models
+|   |-- presentation/                     components, labels, UI utilities
+|   `-- bootstrap/container.ts            dependency composition
+|-- tests/
+|   |-- unit/                             fast Vitest tests arranged by layer
+|   `-- e2e/                              Playwright browser tests
+|-- database/local-bootstrap.sql          disposable local/E2E schema only
 |-- README.md
 |-- docker-compose.dev.yaml              local Next.js + PostgreSQL
 |-- docker-compose.e2e.yaml              disposable deterministic test stack
-`-- frontend/                            Vercel project root
-    |-- app/
-    |   |-- (authenticated)/             protected Server Component pages
-    |   |-- auth/                        authentication page
-    |   `-- api/                          Blob grant and cron infrastructure routes
-    |-- components/                       presentation and small client islands
-    |-- database/schema.sql               disposable DB snapshot; never a migration
-    |-- e2e/                              browser-level behavior tests
-    |-- src/
-    |   |-- core/
-    |   |   |-- domain/                   rules, entities, aggregate persistence ports
-    |   |   `-- application/
-    |   |       |-- contracts/            use-case input/output types
-    |   |       |-- ports/                external-service interfaces
-    |   |       `-- use-cases/            application orchestration
-    |   |-- adapters/
-    |   |   |-- inbound/next/             actions, queries, sessions, view models
-    |   |   `-- outbound/                 postgres, OpenAI, auth, quota, Blob, logs
-    |   `-- bootstrap/container.ts        dependency composition
-    |-- tests/unit/                        core and adapter tests
-    |-- Dockerfile                         local/E2E image, not production packaging
-    `-- vercel.json                        Fluid compute and orphan-cleanup schedule
+|-- Dockerfile                            local/E2E image
+`-- vercel.json                           Fluid compute and cleanup schedule
 ```
 
 ## Technology choices
@@ -153,7 +148,7 @@ OpenAI SDK retries are disabled internally so the adapter can deliberately reope
 
 ## Configuration
 
-Copy `frontend/.env.example` to `frontend/.env.local` when running Next.js outside Compose. All values are server-only unless the name explicitly starts with `NEXT_PUBLIC_` (this project currently needs none).
+Copy `.env.example` to `.env.local` when running Next.js outside Compose. All values are server-only unless the name explicitly starts with `NEXT_PUBLIC_` (this project currently needs none).
 
 ### Required server values
 
@@ -224,10 +219,9 @@ This removes local container data. It is unrelated to, and must never target, th
 
 ### Native Next.js process
 
-Start PostgreSQL with the same immutable schema, set `frontend/.env.local`, then:
+Set `.env.local`, using either the existing Neon pooled URL or a local PostgreSQL URL, then:
 
 ```bash
-cd frontend
 npm ci
 npm run dev
 ```
@@ -236,7 +230,7 @@ The application runs at <http://localhost:3000>. Node.js 22 is required.
 
 ## Verification
 
-Run fast checks from `frontend`:
+Run fast checks from the repository root:
 
 ```bash
 npm run typecheck
@@ -245,7 +239,7 @@ npm test
 npm run build
 ```
 
-Run browser tests from `frontend`:
+Run browser tests from the repository root:
 
 ```bash
 npx playwright install chromium
@@ -256,16 +250,16 @@ The E2E runner builds and starts the isolated Compose stack, waits for it, runs 
 
 ## Vercel deployment
 
-Create one Vercel project with `frontend` as its Root Directory and Next.js as the detected framework. Use Node.js 22. The Dockerfile and Compose manifests are development/test conveniences; Vercel builds the Next.js project natively.
+Create one Vercel project using the repository root as its Root Directory and Next.js as the detected framework. Use Node.js 22. The Dockerfile and Compose manifests are development/test conveniences; Vercel builds the Next.js project natively.
 
 ### Connected resources
 
-1. Attach the existing PostgreSQL database through its provider and set a pooled `DATABASE_URL`. Place the function region near the database. Do not run `schema.sql`, Alembic, Drizzle migrations, or any DDL.
+1. Attach the existing Neon database and set its pooled `DATABASE_URL`. Place the function region near the database. Do not run `database/local-bootstrap.sql`, Alembic, Drizzle migrations, or any DDL against it.
 2. Connect a private Vercel Blob store. The browser receives only a short-lived, authenticated grant for its bounded `speech-staging/{userId}/audio.{supportedExtension}` slot; it never receives a reusable Blob secret. Uploads may overwrite that slot, while the opaque ETag binds processing and deletion to the exact object version the browser just wrote. The server later streams by owned pathname and verifies metadata/ETag before use.
 3. Create an Upstash Redis database and provide its REST URL/token. A single Lua execution prunes expired attempts, checks both rolling limits, records an accepted attempt, and updates expiry atomically across Vercel instances.
 4. Configure the OpenAI key. Confirm the code-locked models remain `o4-mini` and `gpt-4o-mini-transcribe`; there are intentionally no model-name environment switches.
 5. Set the existing JWT secret before traffic moves so current sessions continue to verify.
-6. Configure `CRON_SECRET`. `frontend/vercel.json` enables Fluid compute and schedules `/api/cron/blob-cleanup` daily at 03:00 UTC.
+6. Configure `CRON_SECRET`. `vercel.json` enables Fluid compute and schedules `/api/cron/blob-cleanup` daily at 03:00 UTC.
 
 Direct browser-to-Blob staging is required in production because the 25 MiB application limit is larger than Vercel's function request-body limit. Private Blob is temporary transport, not durable application data. Successful and failed processing paths attempt immediate deletion, while cron covers interrupted invocations and abandoned uploads.
 
