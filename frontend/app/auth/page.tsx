@@ -1,8 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useState } from "react";
-import type { SubmitEventHandler } from "react";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -10,44 +7,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useApplication } from "@/app/providers";
 import { AuthForm } from "@/components/auth/AuthForm";
-import type { AuthCredentials } from "@/lib/application/models";
-import { ApplicationError } from "@/lib/application/errors";
+import { getCurrentUser } from "@/src/adapters/inbound/next/session";
 
-export default function AuthPage() {
-  const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const application = useApplication();
-
-  const handleSubmit: SubmitEventHandler = async (event) => {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    const credentials: AuthCredentials = { email, password };
-
-    try {
-      if (mode === "register") {
-        await application.auth.register(credentials);
-      } else {
-        await application.auth.login(credentials);
-      }
-      router.push("/");
-    } catch (err) {
-      if (err instanceof ApplicationError) {
-        setError(err.message);
-      } else {
-        setError("Unable to reach the service. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+export default async function AuthPage() {
+  if ((await getCurrentUser()) !== null) redirect("/");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -59,19 +23,7 @@ export default function AuthPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm
-            mode={mode}
-            email={email}
-            password={password}
-            error={error}
-            isSubmitting={isSubmitting}
-            onEmailChange={setEmail}
-            onPasswordChange={setPassword}
-            onToggleMode={() =>
-              setMode(mode === "login" ? "register" : "login")
-            }
-            onSubmit={handleSubmit}
-          />
+          <AuthForm />
         </CardContent>
       </Card>
     </main>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ApplicationProvider, AuthProvider } from "./providers";
 
 export const metadata: Metadata = {
   title: "Grammar Tracker",
@@ -14,11 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full font-sans antialiased">
-      <body className="min-h-full flex flex-col">
-        <ApplicationProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ApplicationProvider>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

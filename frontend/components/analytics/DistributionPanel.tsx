@@ -1,27 +1,19 @@
-import type { AnalyticsDistribution } from "@/lib/application/models";
-import { errorRate, MISTAKE_CATEGORY_IDS } from "@/lib/domain/analysis";
 import { mistakeCategoryLabel } from "@/lib/presentation/mistake-categories";
+import type { DistributionView } from "@/src/adapters/inbound/next/view-models";
+import { errorRate, MISTAKE_CATEGORIES } from "@/src/core/domain/analysis";
 
-type DistributionPanelProps = {
-  distribution: AnalyticsDistribution | null;
-};
+interface DistributionPanelProps {
+  readonly distribution: DistributionView;
+}
 
 export function DistributionPanel({ distribution }: DistributionPanelProps) {
-  if (!distribution) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No distribution available.
-      </p>
-    );
-  }
-
   const frequenciesByCategory = new Map(
     distribution.mistakeFrequencies.map((frequency) => [
       frequency.category,
       frequency,
     ]),
   );
-  const frequencies = MISTAKE_CATEGORY_IDS.map(
+  const frequencies = MISTAKE_CATEGORIES.map(
     (category) =>
       frequenciesByCategory.get(category) ?? {
         category,
@@ -38,8 +30,8 @@ export function DistributionPanel({ distribution }: DistributionPanelProps) {
       </div>
 
       <div className="space-y-4" aria-label="Error rate by mistake category">
-        {frequencies.map((item) => (
-          <DistributionBar key={item.category} frequency={item} />
+        {frequencies.map((frequency) => (
+          <DistributionBar key={frequency.category} frequency={frequency} />
         ))}
       </div>
 
@@ -57,13 +49,12 @@ export function DistributionPanel({ distribution }: DistributionPanelProps) {
   );
 }
 
-type DistributionBarProps = {
-  frequency: AnalyticsDistribution["mistakeFrequencies"][number];
-};
+interface DistributionBarProps {
+  readonly frequency: DistributionView["mistakeFrequencies"][number];
+}
 
 function DistributionBar({ frequency }: DistributionBarProps) {
-  const rate = errorRate(frequency);
-  const percentage = Math.round(rate * 1000) / 10;
+  const percentage = Math.round(errorRate(frequency) * 1_000) / 10;
 
   return (
     <div className="space-y-1.5">
@@ -85,10 +76,10 @@ function DistributionBar({ frequency }: DistributionBarProps) {
         aria-valuetext={`${percentage}%`}
       >
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-500"
+          className="h-full rounded-full bg-primary"
           style={{
             width: `${Math.min(percentage, 100)}%`,
-            minWidth: percentage && percentage > 0 ? "2px" : undefined,
+            minWidth: percentage > 0 ? "2px" : undefined,
           }}
         />
       </div>

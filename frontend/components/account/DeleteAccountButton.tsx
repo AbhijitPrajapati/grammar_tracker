@@ -1,41 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, type FormEvent } from "react";
 
-import { useApplication } from "@/app/providers";
 import { Button } from "@/components/ui/button";
+import { deleteAccountAction } from "@/src/adapters/inbound/next/actions/account";
+import type { ActionState } from "@/src/adapters/inbound/next/action-state";
+
+const INITIAL_STATE: ActionState = { status: "idle" };
 
 export function DeleteAccountButton() {
-  const router = useRouter();
-  const application = useApplication();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, formAction, isPending] = useActionState(
+    deleteAccountAction,
+    INITIAL_STATE,
+  );
 
-  const deleteAccount = async () => {
-    if (!window.confirm("Delete your account and all saved speeches?")) return;
-
-    setError(null);
-    setIsDeleting(true);
-    try {
-      await application.account.delete();
-      router.replace("/auth");
-    } catch {
-      setError("Unable to delete your account.");
-      setIsDeleting(false);
+  function confirmDeletion(event: FormEvent<HTMLFormElement>): void {
+    if (!window.confirm("Delete your account and all saved speeches?")) {
+      event.preventDefault();
     }
-  };
+  }
 
   return (
-    <div className="space-y-3">
-      <Button
-        variant="destructive"
-        disabled={isDeleting}
-        onClick={() => void deleteAccount()}
-      >
-        {isDeleting ? "Deleting account..." : "Delete account"}
+    <form className="space-y-3" action={formAction} onSubmit={confirmDeletion}>
+      <Button variant="destructive" type="submit" disabled={isPending}>
+        {isPending ? "Deleting account..." : "Delete account"}
       </Button>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-    </div>
+      {state.status === "error" ? (
+        <p className="text-sm text-destructive" role="alert" aria-live="polite">
+          {state.message}
+        </p>
+      ) : null}
+    </form>
   );
 }

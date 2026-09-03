@@ -1,7 +1,7 @@
-import type { MistakeCategoryId } from "@/lib/domain/analysis";
+import type { MistakeCategory } from "@/src/core/domain/analysis";
 
 export interface MistakeCategoryOption {
-  id: MistakeCategoryId;
+  id: MistakeCategory;
   label: string;
 }
 
@@ -14,7 +14,7 @@ export const MISTAKE_CATEGORY_OPTIONS = [
   { id: "plurality", label: "Plurality" },
 ] as const satisfies readonly MistakeCategoryOption[];
 
-export function mistakeCategoryLabel(categoryId: MistakeCategoryId): string {
+export function mistakeCategoryLabel(categoryId: MistakeCategory): string {
   return (
     MISTAKE_CATEGORY_OPTIONS.find((option) => option.id === categoryId)
       ?.label ?? categoryId

@@ -1,20 +1,17 @@
 import { expect, test } from "@playwright/test";
 
 import { registerThroughUi, uniqueCredentials } from "./support/auth";
+import {
+  DETERMINISTIC_TRANSCRIPT,
+  uploadSpeechThroughUi,
+} from "./support/speech";
 
 test("speech upload, history, analytics, and deletion", async ({ page }) => {
   await registerThroughUi(page, uniqueCredentials("speech"));
 
-  await page.getByLabel("Audio clip").setInputFiles({
-    name: "learner-sample.wav",
-    mimeType: "audio/wav",
-    buffer: Buffer.from("deterministic E2E audio fixture"),
-  });
-  await page.getByRole("button", { name: "Upload and analyze" }).click();
+  await uploadSpeechThroughUi(page);
 
-  await expect(
-    page.getByText("She go to the store yesterday and buy two apple."),
-  ).toBeVisible();
+  await expect(page.getByText(DETERMINISTIC_TRANSCRIPT)).toBeVisible();
   await expect(page.getByText("She goes", { exact: false })).toBeVisible();
   await expect(page.getByText("two apples", { exact: false })).toBeVisible();
 

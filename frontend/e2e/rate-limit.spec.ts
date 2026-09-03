@@ -1,57 +1,26 @@
 import { expect, test } from "@playwright/test";
 
-import { uniqueCredentials } from "./support/auth";
+import { registerThroughUi, uniqueCredentials } from "./support/auth";
+import {
+  DETERMINISTIC_TRANSCRIPT,
+  uploadSpeechThroughUi,
+} from "./support/speech";
 
 test("a user cannot exceed the speech-analysis minute limit", async ({
-  request,
+  page,
 }) => {
-  const credentials = uniqueCredentials("rate-limit");
-  const registration = await request.post("/api/v1/auth/register", {
-    data: credentials,
-  });
-  expect(registration.status()).toBe(201);
-
-  const login = await request.post("/api/v1/auth/login", {
-    data: credentials,
-  });
-  expect(login.status()).toBe(200);
-
-  const upload = () =>
-    request.post("/api/v1/speeches", {
-      multipart: {
-        file: {
-          name: "learner-sample.wav",
-          mimeType: "audio/wav",
-          buffer: Buffer.from("deterministic E2E audio fixture"),
-        },
-      },
-    });
+  await registerThroughUi(page, uniqueCredentials("rate-limit"));
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const response = await upload();
-    expect(response.status()).toBe(201);
+    await uploadSpeechThroughUi(page);
+    await expect(page.getByText(DETERMINISTIC_TRANSCRIPT)).toBeVisible();
   }
 
-  const rejected = await upload();
-  expect(rejected.status()).toBe(429);
-  expect(await rejected.json()).toMatchObject({
-    code: "QUOTA_REACHED",
-  });
+  await uploadSpeechThroughUi(page);
+  await expect(page.getByText("Analysis quota reached")).toBeVisible();
 
-  const otherCredentials = uniqueCredentials("rate-limit-isolation");
-  expect(
-    (
-      await request.post("/api/v1/auth/register", {
-        data: otherCredentials,
-      })
-    ).status(),
-  ).toBe(201);
-  expect(
-    (
-      await request.post("/api/v1/auth/login", {
-        data: otherCredentials,
-      })
-    ).status(),
-  ).toBe(200);
-  expect((await upload()).status()).toBe(201);
+  await page.getByRole("button", { name: "Logout" }).click();
+  await registerThroughUi(page, uniqueCredentials("rate-limit-isolation"));
+  await uploadSpeechThroughUi(page);
+  await expect(page.getByText(DETERMINISTIC_TRANSCRIPT)).toBeVisible();
 });

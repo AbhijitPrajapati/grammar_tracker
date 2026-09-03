@@ -1,56 +1,89 @@
-import type { SubmitEventHandler } from "react";
+"use client";
+
+import { useActionState, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authenticateAction } from "@/src/adapters/inbound/next/actions/auth";
+import type { ActionState } from "@/src/adapters/inbound/next/action-state";
 
-type AuthFormProps = {
-  mode: "login" | "register";
-  email: string;
-  password: string;
-  error: string | null;
-  isSubmitting: boolean;
-  onEmailChange: (email: string) => void;
-  onPasswordChange: (password: string) => void;
-  onToggleMode: () => void;
-  onSubmit: SubmitEventHandler;
-};
+type AuthMode = "login" | "register";
 
-export function AuthForm({
-  mode,
-  email,
-  password,
-  error,
-  isSubmitting,
-  onEmailChange,
-  onPasswordChange,
-  onToggleMode,
-  onSubmit,
-}: AuthFormProps) {
+const INITIAL_STATE: ActionState = { status: "idle" };
+
+export function AuthForm() {
+  const [mode, setMode] = useState<AuthMode>("login");
+
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
+    <AuthModeForm
+      key={mode}
+      mode={mode}
+      onToggleMode={() =>
+        setMode((current) => (current === "login" ? "register" : "login"))
+      }
+    />
+  );
+}
+
+function AuthModeForm({
+  mode,
+  onToggleMode,
+}: {
+  mode: AuthMode;
+  onToggleMode: () => void;
+}) {
+  const [state, formAction, isPending] = useActionState(
+    authenticateAction,
+    INITIAL_STATE,
+  );
+
+  return (
+    <form className="space-y-4" action={formAction}>
+      <input type="hidden" name="mode" value={mode} />
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
+          name="email"
           type="email"
-          value={email}
-          onChange={(event) => onEmailChange(event.target.value)}
+          autoComplete="email"
+          maxLength={320}
+          aria-invalid={Boolean(
+            state.status === "error" && state.fieldErrors?.email,
+          )}
+          aria-describedby="email-errors"
           required
         />
+        <FieldErrors id="email-errors" errors={fieldErrors(state, "email")} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
+          name="password"
           type="password"
-          value={password}
-          onChange={(event) => onPasswordChange(event.target.value)}
+          autoComplete={mode === "login" ? "current-password" : "new-password"}
+          minLength={8}
+          maxLength={128}
+          aria-invalid={Boolean(
+            state.status === "error" && state.fieldErrors?.password,
+          )}
+          aria-describedby="password-errors"
           required
         />
+        <FieldErrors
+          id="password-errors"
+          errors={fieldErrors(state, "password")}
+        />
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <Button className="w-full" type="submit" disabled={isSubmitting}>
-        {isSubmitting
+      {state.status === "error" ? (
+        <p className="text-sm text-destructive" role="alert" aria-live="polite">
+          {state.message}
+        </p>
+      ) : null}
+      <Button className="w-full" type="submit" disabled={isPending}>
+        {isPending
           ? "Please wait..."
           : mode === "login"
             ? "Sign in"
@@ -66,5 +99,24 @@ export function AuthForm({
         </button>
       </div>
     </form>
+  );
+}
+
+function fieldErrors(state: ActionState, field: string): readonly string[] {
+  return state.status === "error" ? (state.fieldErrors?.[field] ?? []) : [];
+}
+
+function FieldErrors({
+  id,
+  errors,
+}: {
+  id: string;
+  errors: readonly string[];
+}) {
+  if (errors.length === 0) return null;
+  return (
+    <p id={id} className="text-sm text-destructive">
+      {errors.join(" ")}
+    </p>
   );
 }

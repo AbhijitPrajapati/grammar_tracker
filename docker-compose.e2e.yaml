@@ -5,6 +5,8 @@ services:
       POSTGRES_USER: grammar_tracker_e2e
       POSTGRES_PASSWORD: grammar_tracker_e2e
       POSTGRES_DB: grammar_tracker_e2e
+    volumes:
+      - ./frontend/database/schema.sql:/docker-entrypoint-initdb.d/001-grammar-tracker-schema.sql:ro
     healthcheck:
       test:
         [
@@ -15,49 +17,27 @@ services:
       timeout: 5s
       retries: 15
 
-  backend:
-    build: ./backend
-    command:
-      [
-        "sh",
-        "-c",
-        "uv run alembic upgrade head && exec uv run uvicorn app.main:app --host 0.0.0.0 --port 8000",
-      ]
+  app:
+    build: ./frontend
     environment:
-      E2E_TESTING: "true"
-      POSTGRES__URL: postgresql+asyncpg://grammar_tracker_e2e:grammar_tracker_e2e@postgres:5432/grammar_tracker_e2e
-      OPENAI__API_KEY: e2e-placeholder-key
-      OPENAI__TEXT_MODEL: e2e-placeholder-model
-      OPENAI__TRANSCRIPTION_MODEL: e2e-placeholder-model
-      JWT__SECRET: e2e-only-secret-that-is-not-used-outside-tests
-      JWT__ALGORITHM: HS256
-      JWT__EXPIRATION_MINUTES: 60
-      ANALYSIS_QUOTA__MINUTE_LIMIT: 3
-      ANALYSIS_QUOTA__DAY_LIMIT: 20
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'uv run python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:8000/openapi.json'', timeout=2)"',
-        ]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        BACKEND_URL: http://backend:8000
-    environment:
-      BACKEND_URL: http://backend:8000
+      DATABASE_URL: postgresql://grammar_tracker_e2e:grammar_tracker_e2e@postgres:5432/grammar_tracker_e2e
+      DATABASE_POOL_MAX: 5
+      JWT_SECRET: e2e-only-secret-that-is-not-used-outside-tests
+      SESSION_TTL_MINUTES: 60
+      ANALYZER_MODE: deterministic
+      ANALYSIS_MINUTE_LIMIT: 3
+      ANALYSIS_DAY_LIMIT: 20
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:?Set UPSTASH_REDIS_REST_URL before running E2E tests}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?Set UPSTASH_REDIS_REST_TOKEN before running E2E tests}
+      BLOB_STORE_ID: ${BLOB_STORE_ID:?Set BLOB_STORE_ID before running E2E tests}
+      VERCEL_OIDC_TOKEN: ${VERCEL_OIDC_TOKEN:?Set VERCEL_OIDC_TOKEN before running E2E tests}
+      BLOB_WEBHOOK_PUBLIC_KEY: ${BLOB_WEBHOOK_PUBLIC_KEY:?Set BLOB_WEBHOOK_PUBLIC_KEY before running E2E tests}
+      CRON_SECRET: e2e-cron-secret
+      LOG_LEVEL: warn
     ports:
       - "3100:3000"
     depends_on:
-      backend:
+      postgres:
         condition: service_healthy
     healthcheck:
       test:

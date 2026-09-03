@@ -1,100 +1,104 @@
 "use client";
 
-import { useState } from "react";
-import type { SubmitEventHandler } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
-import { useApplication } from "@/app/providers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApplicationError } from "@/lib/application/errors";
+import { changePasswordAction } from "@/src/adapters/inbound/next/actions/account";
+import type { ActionState } from "@/src/adapters/inbound/next/action-state";
+
+const INITIAL_STATE: ActionState = { status: "idle" };
 
 export function PasswordChangeForm() {
-  const application = useApplication();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmation, setConfirmation] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction, isPending] = useActionState(
+    changePasswordAction,
+    INITIAL_STATE,
+  );
 
-  const handleSubmit: SubmitEventHandler = async (event) => {
-    event.preventDefault();
-    setMessage(null);
-    setError(null);
-
-    if (newPassword !== confirmation) {
-      setError("New passwords do not match.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await application.account.changePassword({
-        currentPassword,
-        newPassword,
-      });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmation("");
-      setMessage("Password changed.");
-    } catch (caught) {
-      setError(
-        caught instanceof ApplicationError
-          ? caught.message
-          : "Unable to change your password.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  useEffect(() => {
+    if (state.status === "success") formRef.current?.reset();
+  }, [state]);
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="current-password">Current password</Label>
-        <Input
-          id="current-password"
-          type="password"
-          autoComplete="current-password"
-          minLength={8}
-          maxLength={128}
-          required
-          value={currentPassword}
-          onChange={(event) => setCurrentPassword(event.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="new-password">New password</Label>
-        <Input
-          id="new-password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          maxLength={128}
-          required
-          value={newPassword}
-          onChange={(event) => setNewPassword(event.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="confirm-password">Confirm new password</Label>
-        <Input
-          id="confirm-password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          maxLength={128}
-          required
-          value={confirmation}
-          onChange={(event) => setConfirmation(event.target.value)}
-        />
-      </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Changing password..." : "Change password"}
+    <form ref={formRef} className="space-y-4" action={formAction}>
+      <PasswordField
+        id="current-password"
+        name="currentPassword"
+        label="Current password"
+        autoComplete="current-password"
+        errors={fieldErrors(state, "currentPassword")}
+      />
+      <PasswordField
+        id="new-password"
+        name="newPassword"
+        label="New password"
+        autoComplete="new-password"
+        errors={fieldErrors(state, "newPassword")}
+      />
+      <PasswordField
+        id="confirm-password"
+        name="confirmation"
+        label="Confirm new password"
+        autoComplete="new-password"
+        errors={fieldErrors(state, "confirmation")}
+      />
+      {state.status === "error" ? (
+        <p className="text-sm text-destructive" role="alert" aria-live="polite">
+          {state.message}
+        </p>
+      ) : null}
+      {state.status === "success" ? (
+        <p className="text-sm text-emerald-700" role="status">
+          Password changed.
+        </p>
+      ) : null}
+      <Button type="submit" disabled={isPending}>
+        {isPending ? "Changing password..." : "Change password"}
       </Button>
     </form>
   );
+}
+
+function PasswordField({
+  id,
+  name,
+  label,
+  autoComplete,
+  errors,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  autoComplete: string;
+  errors: readonly string[];
+}) {
+  const errorId = `${id}-errors`;
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        name={name}
+        type="password"
+        autoComplete={autoComplete}
+        minLength={8}
+        maxLength={128}
+        required
+        aria-invalid={errors.length > 0}
+        aria-describedby={errorId}
+      />
+      {errors.length > 0 ? (
+        <p id={errorId} className="text-sm text-destructive">
+          {errors.join(" ")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function fieldErrors(state: ActionState, field: string): readonly string[] {
+  return state.status === "error" ? (state.fieldErrors?.[field] ?? []) : [];
 }

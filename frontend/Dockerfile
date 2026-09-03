@@ -1,27 +1,23 @@
-ARG BACKEND_URL=http://backend:8000
-
-FROM node:22-alpine AS dependencies
+FROM node:22-bookworm-slim AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
-ARG BACKEND_URL
-ENV BACKEND_URL=$BACKEND_URL
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
-ARG BACKEND_URL
 ENV NODE_ENV=production
-ENV BACKEND_URL=$BACKEND_URL
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/next.config.ts ./next.config.ts
-COPY --from=build /app/public ./public
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --chown=node:node --from=build /app/.next ./.next
+COPY --chown=node:node --from=build /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/package.json ./package.json
+COPY --chown=node:node --from=build /app/next.config.ts ./next.config.ts
+USER node
 EXPOSE 3000
 CMD ["npm", "start"]

@@ -1,11 +1,8 @@
-"use client";
-
-import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-import { useApplication, useAuth } from "@/app/providers";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { logoutAction } from "@/src/adapters/inbound/next/actions/auth";
+import { requireCurrentUser } from "@/src/adapters/inbound/next/session";
 
 const navigation = [
   { href: "/", label: "Upload" },
@@ -14,20 +11,12 @@ const navigation = [
   { href: "/account", label: "Account" },
 ] as const;
 
-export default function AuthenticatedLayout({
+export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const application = useApplication();
-  const { isAuthenticated, isRestoring } = useAuth();
-
-  useEffect(() => {
-    if (!isRestoring && !isAuthenticated) router.replace("/auth");
-  }, [isAuthenticated, isRestoring, router]);
-
-  if (isRestoring || !isAuthenticated) return null;
+  await requireCurrentUser();
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -49,13 +38,11 @@ export default function AuthenticatedLayout({
                 {item.label}
               </Link>
             ))}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void application.auth.logout()}
-            >
-              Logout
-            </Button>
+            <form action={logoutAction}>
+              <Button variant="secondary" size="sm" type="submit">
+                Logout
+              </Button>
+            </form>
           </nav>
         </div>
       </header>

@@ -1,22 +1,12 @@
-import { Button } from "@/components/ui/button";
-import type { Speech } from "@/lib/domain/speech";
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
+import { DeleteSpeechButton } from "@/components/speech/DeleteSpeechButton";
+import { LocalDateTime } from "@/components/speech/LocalDateTime";
+import type { SpeechView } from "@/src/adapters/inbound/next/view-models";
 
 interface SpeechTableProps {
-  speeches: Speech[];
-  deletingId: string | null;
-  onDelete: (speech: Speech) => void;
+  readonly speeches: readonly SpeechView[];
 }
 
-export function SpeechTable({
-  speeches,
-  deletingId,
-  onDelete,
-}: SpeechTableProps) {
+export function SpeechTable({ speeches }: SpeechTableProps) {
   if (speeches.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
@@ -40,7 +30,7 @@ export function SpeechTable({
           {speeches.map((speech) => (
             <tr key={speech.id} className="align-top">
               <td className="whitespace-nowrap px-4 py-4 text-muted-foreground">
-                {dateFormatter.format(speech.createdAt)}
+                <LocalDateTime value={speech.createdAt} />
               </td>
               <td className="max-w-xl px-4 py-4">
                 <p className="line-clamp-2">{speech.transcript}</p>
@@ -52,14 +42,7 @@ export function SpeechTable({
                 {speech.analysis.mistakes.length}
               </td>
               <td className="px-4 py-4 text-right">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={deletingId === speech.id}
-                  onClick={() => onDelete(speech)}
-                >
-                  {deletingId === speech.id ? "Deleting..." : "Delete"}
-                </Button>
+                <DeleteSpeechButton speechId={speech.id} />
               </td>
             </tr>
           ))}

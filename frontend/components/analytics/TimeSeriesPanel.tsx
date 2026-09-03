@@ -1,9 +1,11 @@
-import type { AnalyticsTimeSeries } from "@/lib/application/models";
-import { errorRate } from "@/lib/domain/analysis";
+"use client";
 
-type TimeSeriesPanelProps = {
-  timeSeries: AnalyticsTimeSeries | null;
-};
+import type { TimeSeriesView } from "@/src/adapters/inbound/next/view-models";
+import { errorRate } from "@/src/core/domain/analysis";
+
+interface TimeSeriesPanelProps {
+  readonly timeSeries: TimeSeriesView;
+}
 
 const WIDTH = 640;
 const HEIGHT = 320;
@@ -13,7 +15,7 @@ const PLOT_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom;
 const Y_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
 
 export function TimeSeriesPanel({ timeSeries }: TimeSeriesPanelProps) {
-  if (!timeSeries?.points.length) {
+  if (timeSeries.points.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
         No time series data available.
@@ -21,11 +23,11 @@ export function TimeSeriesPanel({ timeSeries }: TimeSeriesPanelProps) {
     );
   }
 
-  const points = [...timeSeries.points].sort(
-    (left, right) => left.time.getTime() - right.time.getTime(),
-  );
-  const startTime = points[0].time.getTime();
-  const endTime = points.at(-1)!.time.getTime();
+  const points = timeSeries.points
+    .map((point) => ({ ...point, timestamp: new Date(point.time).getTime() }))
+    .sort((left, right) => left.timestamp - right.timestamp);
+  const startTime = points[0].timestamp;
+  const endTime = points.at(-1)!.timestamp;
   const plottedPoints = points.map((point) => ({
     ...point,
     rate: errorRate(point),
@@ -36,14 +38,12 @@ export function TimeSeriesPanel({ timeSeries }: TimeSeriesPanelProps) {
       ? MARGIN.left + PLOT_WIDTH / 2
       : MARGIN.left + ((time - startTime) / (endTime - startTime)) * PLOT_WIDTH;
   const y = (rate: number) => MARGIN.top + (1 - rate) * PLOT_HEIGHT;
-
   const linePath = plottedPoints
     .map(
       (point, index) =>
-        `${index === 0 ? "M" : "L"} ${x(point.time.getTime())} ${y(point.rate)}`,
+        `${index === 0 ? "M" : "L"} ${x(point.timestamp)} ${y(point.rate)}`,
     )
     .join(" ");
-
   const xTicks = timeTicks(startTime, endTime, points.length);
 
   return (
@@ -55,7 +55,7 @@ export function TimeSeriesPanel({ timeSeries }: TimeSeriesPanelProps) {
       <div className="overflow-x-auto">
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="h-auto w-full min-w-[480px]"
+          className="h-auto w-full min-w-120"
           role="img"
           aria-label="Error rate over time"
         >
@@ -121,8 +121,8 @@ export function TimeSeriesPanel({ timeSeries }: TimeSeriesPanelProps) {
 
           {plottedPoints.map((point) => (
             <circle
-              key={point.time.toISOString()}
-              cx={x(point.time.getTime())}
+              key={point.time}
+              cx={x(point.timestamp)}
               cy={y(point.rate)}
               r="4"
               fill="var(--background)"
@@ -131,7 +131,7 @@ export function TimeSeriesPanel({ timeSeries }: TimeSeriesPanelProps) {
               vectorEffect="non-scaling-stroke"
             >
               <title>
-                {`${formatDate(point.time.getTime(), endTime - startTime)}: ${formatRate(point.rate)} (${point.occurrences}/${point.opportunities})`}
+                {`${formatDate(point.timestamp, endTime - startTime)}: ${formatRate(point.rate)} (${point.occurrences}/${point.opportunities})`}
               </title>
             </circle>
           ))}
@@ -162,7 +162,7 @@ function timeTicks(start: number, end: number, pointCount: number): number[] {
 
 function formatDate(time: number, duration: number): string {
   const options: Intl.DateTimeFormatOptions =
-    duration > 365 * 24 * 60 * 60 * 1000
+    duration > 365 * 24 * 60 * 60 * 1_000
       ? { month: "short", year: "2-digit" }
       : { month: "short", day: "numeric" };
   return new Intl.DateTimeFormat("en-US", options).format(new Date(time));
