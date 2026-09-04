@@ -80,7 +80,7 @@ describe("immutable production database mapping", () => {
     ).replace(/\s+/g, " ");
 
     expect(sql.match(/CREATE TABLE /g)).toHaveLength(4);
-    expect(sql).toContain("email citext(320) NOT NULL");
+    expect(sql).toContain("email citext NOT NULL");
     expect(sql).toContain("analysis jsonb NOT NULL");
     expect(sql).toContain(
       "CONSTRAINT mistake_frequencies_pkey PRIMARY KEY (speech_id, category)",

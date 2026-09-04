@@ -32,10 +32,12 @@ export async function POST(request: Request): Promise<Response> {
       webhookPublicKey: environment.blobWebhookPublicKey,
       getSignedToken: async (pathname) => {
         const user = await getCurrentUser();
+
         if (user === null) throw new UploadAuthenticationError();
 
         validateStagedAudioPathname(user.id, pathname);
         const validUntil = Date.now() + SIGNED_UPLOAD_LIFETIME_MS;
+
         const token = await issueSignedToken({
           storeId: environment.blobStoreId,
           pathname,

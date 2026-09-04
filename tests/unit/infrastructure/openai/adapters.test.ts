@@ -233,7 +233,7 @@ describe("OpenAI speech analyzer", () => {
     ).rejects.toThrow("did not satisfy the analysis schema");
   });
 
-  it("preserves the deterministic E2E fixture exactly", async () => {
+  it("preserves the deterministic fixture exactly", async () => {
     const result = await new DeterministicSpeechAnalyzer().analyze(
       audioSample(),
     );

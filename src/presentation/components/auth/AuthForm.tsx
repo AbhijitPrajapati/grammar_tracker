@@ -14,11 +14,17 @@ const INITIAL_STATE: ActionState = { status: "idle" };
 
 export function AuthForm() {
   const [mode, setMode] = useState<AuthMode>("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   return (
     <AuthModeForm
       key={mode}
       mode={mode}
+      email={email}
+      password={password}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
       onToggleMode={() =>
         setMode((current) => (current === "login" ? "register" : "login"))
       }
@@ -28,9 +34,17 @@ export function AuthForm() {
 
 function AuthModeForm({
   mode,
+  email,
+  password,
+  onEmailChange,
+  onPasswordChange,
   onToggleMode,
 }: {
   mode: AuthMode;
+  email: string;
+  password: string;
+  onEmailChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
   onToggleMode: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(
@@ -49,6 +63,8 @@ function AuthModeForm({
           type="email"
           autoComplete="email"
           maxLength={320}
+          value={email}
+          onChange={(event) => onEmailChange(event.currentTarget.value)}
           aria-invalid={Boolean(
             state.status === "error" && state.fieldErrors?.email,
           )}
@@ -66,6 +82,8 @@ function AuthModeForm({
           autoComplete={mode === "login" ? "current-password" : "new-password"}
           minLength={8}
           maxLength={128}
+          value={password}
+          onChange={(event) => onPasswordChange(event.currentTarget.value)}
           aria-invalid={Boolean(
             state.status === "error" && state.fieldErrors?.password,
           )}

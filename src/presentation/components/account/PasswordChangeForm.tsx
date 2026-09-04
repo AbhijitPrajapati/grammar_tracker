@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useState } from "react";
 
 import { Button } from "@/src/presentation/components/ui/button";
 import { Input } from "@/src/presentation/components/ui/input";
@@ -9,25 +9,44 @@ import { changePasswordAction } from "@/src/interfaces/next/actions/account";
 import type { ActionState } from "@/src/interfaces/next/action-state";
 
 const INITIAL_STATE: ActionState = { status: "idle" };
+const EMPTY_PASSWORDS = {
+  currentPassword: "",
+  newPassword: "",
+  confirmation: "",
+};
+
+type PasswordFieldName = keyof typeof EMPTY_PASSWORDS;
 
 export function PasswordChangeForm() {
-  const formRef = useRef<HTMLFormElement>(null);
+  const [passwords, setPasswords] = useState(EMPTY_PASSWORDS);
+
+  async function submitPasswordChange(
+    previousState: ActionState,
+    formData: FormData,
+  ): Promise<ActionState> {
+    const nextState = await changePasswordAction(previousState, formData);
+    if (nextState.status === "success") setPasswords(EMPTY_PASSWORDS);
+    return nextState;
+  }
+
   const [state, formAction, isPending] = useActionState(
-    changePasswordAction,
+    submitPasswordChange,
     INITIAL_STATE,
   );
 
-  useEffect(() => {
-    if (state.status === "success") formRef.current?.reset();
-  }, [state]);
+  function setPassword(name: PasswordFieldName, value: string): void {
+    setPasswords((current) => ({ ...current, [name]: value }));
+  }
 
   return (
-    <form ref={formRef} className="space-y-4" action={formAction}>
+    <form className="space-y-4" action={formAction}>
       <PasswordField
         id="current-password"
         name="currentPassword"
         label="Current password"
         autoComplete="current-password"
+        value={passwords.currentPassword}
+        onChange={(value) => setPassword("currentPassword", value)}
         errors={fieldErrors(state, "currentPassword")}
       />
       <PasswordField
@@ -35,6 +54,8 @@ export function PasswordChangeForm() {
         name="newPassword"
         label="New password"
         autoComplete="new-password"
+        value={passwords.newPassword}
+        onChange={(value) => setPassword("newPassword", value)}
         errors={fieldErrors(state, "newPassword")}
       />
       <PasswordField
@@ -42,9 +63,11 @@ export function PasswordChangeForm() {
         name="confirmation"
         label="Confirm new password"
         autoComplete="new-password"
+        value={passwords.confirmation}
+        onChange={(value) => setPassword("confirmation", value)}
         errors={fieldErrors(state, "confirmation")}
       />
-      {state.status === "error" ? (
+      {state.status === "error" && !hasFieldErrors(state) ? (
         <p className="text-sm text-destructive" role="alert" aria-live="polite">
           {state.message}
         </p>
@@ -66,12 +89,16 @@ function PasswordField({
   name,
   label,
   autoComplete,
+  value,
+  onChange,
   errors,
 }: {
   id: string;
   name: string;
   label: string;
   autoComplete: string;
+  value: string;
+  onChange: (value: string) => void;
   errors: readonly string[];
 }) {
   const errorId = `${id}-errors`;
@@ -86,6 +113,8 @@ function PasswordField({
         autoComplete={autoComplete}
         minLength={8}
         maxLength={128}
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
         required
         aria-invalid={errors.length > 0}
         aria-describedby={errorId}
@@ -101,4 +130,11 @@ function PasswordField({
 
 function fieldErrors(state: ActionState, field: string): readonly string[] {
   return state.status === "error" ? (state.fieldErrors?.[field] ?? []) : [];
+}
+
+function hasFieldErrors(state: ActionState): boolean {
+  return (
+    state.status === "error" &&
+    Object.values(state.fieldErrors ?? {}).some((errors) => errors.length > 0)
+  );
 }

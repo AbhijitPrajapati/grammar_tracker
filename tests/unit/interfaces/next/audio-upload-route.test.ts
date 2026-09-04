@@ -16,6 +16,7 @@ const doubles = vi.hoisted(() => ({
   handleUploadPresigned: vi.fn(),
   getCurrentUser: vi.fn(),
   getServerEnvironment: vi.fn(),
+  info: vi.fn(),
   warn: vi.fn(),
   requestedPathname: "",
 }));
@@ -34,7 +35,7 @@ vi.mock("@/src/infrastructure/config/env", () => ({
 }));
 
 vi.mock("@/src/infrastructure/observability/logger", () => ({
-  getLogger: () => ({ warn: doubles.warn }),
+  getLogger: () => ({ info: doubles.info, warn: doubles.warn }),
 }));
 
 vi.mock("@/src/interfaces/next/session", () => ({
