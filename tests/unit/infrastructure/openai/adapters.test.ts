@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { AudioSample } from "@/src/application/contracts/audio";
+import { AudioSample } from "@/src/application/contracts/audio-sample";
 import type { OpenAiClient } from "@/src/infrastructure/openai/client";
 import {
   DETERMINISTIC_TRANSCRIPT,

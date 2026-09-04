@@ -7,9 +7,9 @@ import {
   type PrivateBlobGetResult,
   type StagedAudioBlobMetadata,
 } from "@/src/infrastructure/blob";
-import { MAX_STAGED_AUDIO_BYTES } from "@/src/application/contracts/audio-format";
-import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
+import { MAX_AUDIO_INPUT_BYTES } from "@/src/application/policies/audio-input";
 import { InvalidAudio } from "@/src/application/errors";
+import { buildStagedAudioPathname } from "@/src/application/policies/staged-audio-path";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";
 const OTHER_USER_ID = "87509066-5ed7-4b44-ab47-d49d75b94f20";
@@ -120,7 +120,7 @@ describe("VercelBlobStagedAudioStore", () => {
     ["ETag", { etag: "different-etag" }],
     ["empty size", { size: 0 }],
     ["fractional size", { size: 1.5 }],
-    ["oversized content", { size: MAX_STAGED_AUDIO_BYTES + 1 }],
+    ["oversized content", { size: MAX_AUDIO_INPUT_BYTES + 1 }],
     ["non-audio MIME", { contentType: "video/webm" }],
     ["extension/MIME mismatch", { contentType: "audio/mpeg" }],
   ])("rejects invalid head %s metadata", async (_case, override) => {

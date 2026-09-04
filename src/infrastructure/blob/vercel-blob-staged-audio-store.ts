@@ -7,21 +7,21 @@ import {
   head as vercelBlobHead,
 } from "@vercel/blob";
 
-import { AudioSample } from "@/src/application/contracts/audio";
+import { AudioSample } from "@/src/application/contracts/audio-sample";
 import {
   isAllowedAudioContentType,
   isAudioContentTypeAllowedForExtension,
-  MAX_STAGED_AUDIO_BYTES,
+  MAX_AUDIO_INPUT_BYTES,
   type AllowedAudioContentType,
-} from "@/src/application/contracts/audio-format";
-import {
-  validateStagedAudioPathname,
-  type StagedAudioReference,
-  type ValidatedStagedAudioPath,
-} from "@/src/application/contracts/staged-audio";
+} from "@/src/application/policies/audio-input";
+import { type StagedAudioReference } from "@/src/application/contracts/staged-audio";
 import { InvalidAudio } from "@/src/application/errors";
 import type { StagedAudioStore } from "@/src/application/ports/services";
 import type { UserId } from "@/src/domain/user";
+import {
+  ValidatedStagedAudioPath,
+  validateStagedAudioPathname,
+} from "@/src/application/policies/staged-audio-path";
 
 // Used to validate that etags don't contain unexpected characters
 const OPAQUE_ETAG_CHARACTERS = /^[\x21-\x7e]+$/;
@@ -201,7 +201,7 @@ function validateStagedAudioMetadata(
     typeof metadata.size !== "number" ||
     !Number.isSafeInteger(metadata.size) ||
     metadata.size <= 0 ||
-    metadata.size > MAX_STAGED_AUDIO_BYTES
+    metadata.size > MAX_AUDIO_INPUT_BYTES
   ) {
     throw new InvalidAudio("Invalid staged audio size");
   }

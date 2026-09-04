@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { AudioSample } from "@/src/application/contracts/audio";
+import { AudioSample } from "@/src/application/contracts/audio-sample";
 import {
   ALLOWED_AUDIO_CONTENT_TYPES,
   ALLOWED_AUDIO_EXTENSIONS,
   isAudioContentTypeAllowedForExtension,
-  MAX_STAGED_AUDIO_BYTES,
-} from "@/src/application/contracts/audio-format";
+  MAX_AUDIO_INPUT_BYTES,
+} from "@/src/application/policies/audio-input";
+import { InvalidAudio } from "@/src/application/errors";
 import {
   buildStagedAudioPathname,
   validateStagedAudioPathname,
-} from "@/src/application/contracts/staged-audio";
-import { InvalidAudio } from "@/src/application/errors";
+} from "@/src/application/policies/staged-audio-path";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";
 const OTHER_USER_ID = "87509066-5ed7-4b44-ab47-d49d75b94f20";
@@ -33,7 +33,7 @@ describe("staged audio policy", () => {
     expect(
       ALLOWED_AUDIO_CONTENT_TYPES.every((type) => type.startsWith("audio/")),
     ).toBe(true);
-    expect(MAX_STAGED_AUDIO_BYTES).toBe(AudioSample.MAX_CONTENT_BYTES);
+    expect(MAX_AUDIO_INPUT_BYTES).toBe(AudioSample.MAX_CONTENT_BYTES);
   });
 
   it("builds the exact authenticated-owner slot for a supported format", () => {

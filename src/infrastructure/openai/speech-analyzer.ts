@@ -9,7 +9,7 @@ import type {
 } from "@/src/application/ports/services";
 import { Analysis, MISTAKE_CATEGORIES } from "@/src/domain/analysis";
 import { OpenAiClient } from "./client";
-import { AudioSample } from "@/src/application/contracts/audio";
+import { AudioSample } from "@/src/application/contracts/audio-sample";
 import { toStreamingFile } from "openai";
 
 const analysisPayloadSchema = z.object({

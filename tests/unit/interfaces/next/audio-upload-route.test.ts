@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ALLOWED_AUDIO_CONTENT_TYPES,
-  MAX_STAGED_AUDIO_BYTES,
-} from "@/src/application/contracts/audio-format";
-import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
+  MAX_AUDIO_INPUT_BYTES,
+} from "@/src/application/policies/audio-input";
 import { POST } from "@/app/api/uploads/audio/route";
+import { buildStagedAudioPathname } from "@/src/application/policies/staged-audio-path";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";
 const PATHNAME = buildStagedAudioPathname(USER_ID, "webm");
@@ -95,7 +95,7 @@ describe("audio upload token route", () => {
       pathname: PATHNAME,
       operations: ["put"],
       allowedContentTypes: [...ALLOWED_AUDIO_CONTENT_TYPES],
-      maximumSizeInBytes: MAX_STAGED_AUDIO_BYTES,
+      maximumSizeInBytes: MAX_AUDIO_INPUT_BYTES,
       validUntil: NOW.getTime() + 10 * 60 * 1_000,
     });
 
@@ -107,7 +107,7 @@ describe("audio upload token route", () => {
       urlOptions: {
         validUntil: NOW.getTime() + 10 * 60 * 1_000,
         allowedContentTypes: [...ALLOWED_AUDIO_CONTENT_TYPES],
-        maximumSizeInBytes: MAX_STAGED_AUDIO_BYTES,
+        maximumSizeInBytes: MAX_AUDIO_INPUT_BYTES,
         allowOverwrite: true,
         addRandomSuffix: false,
       },

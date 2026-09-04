@@ -1,4 +1,4 @@
-export const MAX_STAGED_AUDIO_BYTES = 25 * 1024 * 1024;
+export const MAX_AUDIO_INPUT_BYTES = 25 * 1024 * 1024;
 
 // Extensions allowed by speech-analysis
 export const ALLOWED_AUDIO_EXTENSIONS = [

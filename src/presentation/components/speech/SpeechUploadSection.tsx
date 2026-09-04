@@ -22,10 +22,10 @@ import {
   isAllowedAudioContentType,
   isAllowedAudioExtension,
   isAudioContentTypeAllowedForExtension,
-  MAX_STAGED_AUDIO_BYTES,
+  MAX_AUDIO_INPUT_BYTES,
   type AllowedAudioExtension,
-} from "@/src/application/contracts/audio-format";
-import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
+} from "@/src/application/policies/audio-input";
+import { buildStagedAudioPathname } from "@/src/application/policies/staged-audio-path";
 
 type SpeechActionState = ActionState<SpeechView | undefined>;
 const INITIAL_STATE: SpeechActionState = { status: "idle" };
@@ -185,7 +185,7 @@ function validateAudioFile(file: File): AudioValidation {
   if (file.size <= 0) {
     return { valid: false, message: "Audio must not be empty" };
   }
-  if (file.size > MAX_STAGED_AUDIO_BYTES) {
+  if (file.size > MAX_AUDIO_INPUT_BYTES) {
     return { valid: false, message: "Audio must be no larger than 25 MiB" };
   }
 

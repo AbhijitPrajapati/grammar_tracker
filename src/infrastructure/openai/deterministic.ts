@@ -5,7 +5,7 @@ import type {
   SpeechAnalyzer,
 } from "@/src/application/ports/services";
 import { Analysis } from "@/src/domain/analysis";
-import { AudioSample } from "@/src/application/contracts/audio";
+import { AudioSample } from "@/src/application/contracts/audio-sample";
 
 export const DETERMINISTIC_TRANSCRIPT =
   "She go to the store yesterday and buy two apple.";

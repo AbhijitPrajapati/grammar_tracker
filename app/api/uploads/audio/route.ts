@@ -7,12 +7,12 @@ import { NextResponse } from "next/server";
 
 import {
   ALLOWED_AUDIO_CONTENT_TYPES,
-  MAX_STAGED_AUDIO_BYTES,
-} from "@/src/application/contracts/audio-format";
-import { validateStagedAudioPathname } from "@/src/application/contracts/staged-audio";
+  MAX_AUDIO_INPUT_BYTES,
+} from "@/src/application/policies/audio-input";
 import { getServerEnvironment } from "@/src/infrastructure/config/env";
 import { getLogger } from "@/src/infrastructure/observability/logger";
 import { getCurrentUser } from "@/src/interfaces/next/session";
+import { validateStagedAudioPathname } from "@/src/application/policies/staged-audio-path";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -41,7 +41,7 @@ export async function POST(request: Request): Promise<Response> {
           pathname,
           operations: ["put"],
           allowedContentTypes: [...ALLOWED_AUDIO_CONTENT_TYPES],
-          maximumSizeInBytes: MAX_STAGED_AUDIO_BYTES,
+          maximumSizeInBytes: MAX_AUDIO_INPUT_BYTES,
           validUntil,
         });
 
@@ -50,7 +50,7 @@ export async function POST(request: Request): Promise<Response> {
           urlOptions: {
             validUntil,
             allowedContentTypes: [...ALLOWED_AUDIO_CONTENT_TYPES],
-            maximumSizeInBytes: MAX_STAGED_AUDIO_BYTES,
+            maximumSizeInBytes: MAX_AUDIO_INPUT_BYTES,
             // Each user has one etag-protected staging slot per supported format
             // This bounds abandoned storage
             allowOverwrite: true,

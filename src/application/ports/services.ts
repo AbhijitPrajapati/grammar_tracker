@@ -1,4 +1,4 @@
-import type { AudioSample } from "../contracts/audio";
+import type { AudioSample } from "../contracts/audio-sample";
 import type { StagedAudioReference } from "../contracts/staged-audio";
 import type { Analysis } from "../../domain/analysis";
 import type { UserId } from "../../domain/user";
