@@ -1,0 +1,132 @@
+import "server-only";
+
+import { Redis } from "@upstash/redis";
+
+import {
+  ChangePassword,
+  DeleteSpeech,
+  DeleteUser,
+  ListSpeeches,
+  Login,
+  ProcessSpeech,
+  RegisterAndStartSession,
+  ResolveSession,
+  RetrieveAnalyticsDashboard,
+} from "@/src/application";
+import { Argon2PasswordHasher } from "@/src/infrastructure/auth/argon2-password-hasher";
+import { JwtTokenService } from "@/src/infrastructure/auth/jwt-token-service";
+import { VercelBlobStagedAudioStore } from "@/src/infrastructure/blob/vercel-blob-staged-audio-store";
+import { getServerEnvironment } from "@/src/infrastructure/config/env";
+import { DeterministicSpeechAnalyzer } from "@/src/infrastructure/openai/deterministic";
+import { OpenAiClient } from "@/src/infrastructure/openai/client";
+import { OpenAiSpeechAnalyzer } from "@/src/infrastructure/openai/speech-analyzer";
+import {
+  getPostgresDatabase,
+  PostgresAnalyticsReader,
+  PostgresSpeechRepository,
+  PostgresUserRepository,
+} from "@/src/infrastructure/postgres";
+import { UpstashAnalysisQuota } from "@/src/infrastructure/quota/upstash-analysis-quota";
+import { getLogger } from "@/src/infrastructure/observability/logger";
+
+interface ApplicationContainer {
+  readonly registerAndStartSession: RegisterAndStartSession;
+  readonly login: Login;
+  readonly resolveSession: ResolveSession;
+  readonly changePassword: ChangePassword;
+  readonly deleteUser: DeleteUser;
+  readonly processSpeech: ProcessSpeech;
+  readonly listSpeeches: ListSpeeches;
+  readonly deleteSpeech: DeleteSpeech;
+  readonly retrieveAnalyticsDashboard: RetrieveAnalyticsDashboard;
+}
+
+let applicationContainer: ApplicationContainer | undefined;
+
+export function getApplicationContainer(): ApplicationContainer {
+  applicationContainer ??= createApplicationContainer();
+  return applicationContainer;
+}
+
+function createApplicationContainer(): ApplicationContainer {
+  const environment = getServerEnvironment();
+
+  const database = getPostgresDatabase({
+    databaseUrl: environment.databaseUrl,
+    poolMax: environment.databasePoolMax,
+  });
+
+  const users = new PostgresUserRepository(database);
+  const speeches = new PostgresSpeechRepository(database);
+  const analytics = new PostgresAnalyticsReader(database);
+  const passwordHasher = new Argon2PasswordHasher();
+  const tokens = new JwtTokenService({
+    secret: environment.jwtSecret,
+    expirationMinutes: environment.sessionTtlMinutes,
+  });
+
+  const quota = new UpstashAnalysisQuota(
+    new Redis({
+      url: environment.upstashRedisRestUrl,
+      token: environment.upstashRedisRestToken,
+    }),
+    {
+      minuteLimit: environment.analysisMinuteLimit,
+      dayLimit: environment.analysisDayLimit,
+    },
+  );
+
+  let grammarAnalyzer;
+  if (environment.analyzerMode === "deterministic") {
+    grammarAnalyzer = new DeterministicSpeechAnalyzer();
+  } else {
+    const apiKey = environment.openAiApiKey;
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is required");
+    }
+    const client = new OpenAiClient({
+      apiKey,
+      baseUrl: environment.openAiBaseUrl,
+      timeoutMs: environment.openAiTimeoutMs,
+      maxRetries: environment.openAiMaxRetries,
+    });
+    grammarAnalyzer = new OpenAiSpeechAnalyzer(
+      client,
+      environment.openAiTranscriptionModel,
+      environment.openAiAnalysisModel,
+    );
+  }
+
+  const stagedAudioStore = new VercelBlobStagedAudioStore(
+    environment.blobStoreId,
+  );
+  return Object.freeze({
+    registerAndStartSession: new RegisterAndStartSession(
+      users,
+      passwordHasher,
+      tokens,
+    ),
+    login: new Login(users, passwordHasher, tokens),
+    resolveSession: new ResolveSession(tokens, users),
+    changePassword: new ChangePassword(users, passwordHasher),
+    deleteUser: new DeleteUser(users),
+    processSpeech: new ProcessSpeech(
+      stagedAudioStore,
+      speeches,
+      grammarAnalyzer,
+      quota,
+      (error) => {
+        getLogger().error(
+          {
+            operation: "delete_staged_audio",
+            errorType: error instanceof Error ? error.name : "UnknownError",
+          },
+          "Staged audio cleanup failed",
+        );
+      },
+    ),
+    listSpeeches: new ListSpeeches(speeches),
+    deleteSpeech: new DeleteSpeech(speeches),
+    retrieveAnalyticsDashboard: new RetrieveAnalyticsDashboard(analytics),
+  });
+}

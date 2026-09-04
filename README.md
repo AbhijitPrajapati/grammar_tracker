@@ -4,78 +4,129 @@ English learners often face no shortage of substantial grammatical feedback. Non
 
 Users submit short speech samples, which are transcribed and analyzed for grammatical inaccuracies. Detected errors are categorized, explained, and stored, allowing the system to identify long-term trends across grammatical categories and multiple timeframes.
 
-## Processing Pipeline
-
-1. User submits a speech sample.
-2. Audio is transcribed.
-3. Transcript is analyzed for grammatical innaccuracies.
-4. Detected errors are categorized, explained, and persisted.
-5. Historical error data is aggregated into progress analytics.
-
 ## Features
 
 ### Speech Processing
 
-- Audio transcription
-- AI-driven grammatical analysis
-- Persistent speech history
-- Clear, concise corrections
-- Error categorization
-- Details explanations for each individual error
+- AI-driven audio transcription and grammatical analysis
+- Corrections, explanations, overall feedback, and six stable mistake categories
+- Atomic rolling analysis quotas
+- Private Blob audio uploads up to 25MiB
 
 ### Analytics
 
 - Persistent error history
-- Error distribution by category
-- Error frequency trends over time
+- Frequency trends and error distribution by category
+- Per-category occurrence/opportunity counts and error rates
 - Weekly, monthly, yearly, and all-time statistics
 
 ### Authentication
 
-- Complete User registration and authentication flow
-- Personally-contained speech history and analytics
+- Complete user registration and authentication flow
+- Private, per-user speech history and analytics
 
 ## Architecture
 
 ```text
-Next.js
-   |
-   v
-FastAPI
-   |
-   +----> OpenAI Transcription
-   |
-   +----> OpenAI Text Analysis
-   |
-   v
-PostgreSQL
+Browser
+  |-- React Server Components ---------- read models -----------+
+  |-- Server Actions ------------------- commands --------------|-- Next.js on Vercel
+  `-- private Vercel Blob upload token -- staged audio ---------+
+                                                                  |
+                        +-----------------------------------------+-------------------+
+                        |                                         |                   |
+                        v                                         v                   v
+                  PostgreSQL                              OpenAI APIs          Upstash Redis
+             users/speeches/analytics                transcription/analysis     quota ledger
+
 ```
 
-The frontend, backend, and database are deployed independently. The FastAPI service manages authentication, speech processing, grammatical analysis, persistence, and analytics, while Next.js presents an elegant user experience.
+Server actions and server components are used for authenticated actions and read operations respectively. A narrow HTTP upload route is used to authenticate Blob uploads.
 
-## Technologies
+## Processing Pipeline
 
-**Frontend**
+1. User submits a speech sample.
+2. Authenticated, contrained upload grant is issued, allowing the browser to write directly to a private staging slot.
+3. Analysis attempt is consumed in Upstash Redis
+4. Audio file is streamed to `gpt-4o-mini-transcribe`.
+5. Transcript is analyzed for grammatical innaccuracies with `o4-mini`, resulting in a structured JSON output.
+6. Transcript, errors, and analytics projections are persisted on PostgreSQL.
+7. Staged audio is deleted.
 
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- shadcn/ui
+## Project structure
 
-**Backend**
+```
+grammar_tracker/
+|-- app/                                  Next.js routes and pages
+|-- src/
+|   |-- domain/                           stable business concepts + invariants
+|   |-- application/                      use cases, ports, contracts, policies
+|   |-- infrastructure/                   postgres, OpenAI, auth, quota, Blob, logging
+|   |-- interfaces/next/                  actions, queries
+|   |-- presentation/                     components, UI utilities
+|   `-- bootstrap/container.ts            composition root
+|-- tests/
+|   |-- unit/                             fast Vitest tests
+|   `-- e2e/                              Playwright browser tests
+|-- localdb/bootstrap.sql                 disposable local/E2E schema
+|-- README.md
+|-- docker-compose.dev.yaml              local Next.js + PostgreSQL
+|-- docker-compose.e2e.yaml              disposable deterministic testing
+|-- Dockerfile                           local/E2E image
+```
 
-- Python
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
+## Technology choices
 
-**Machine Learning Services**
+| Concern         | Library/service                                        |
+| --------------- | ------------------------------------------------------ |
+| Web/runtime     | Next.js 16, React 19, Node.js 22                       |
+| Styling         | Tailwind CSS, shadcn-style components                  |
+| Validation      | Zod                                                    |
+| Database        | PostgreSQL 16, Drizzle ORM                             |
+| Passwords       | `argon2`                                               |
+| Sessions        | `jose`                                                 |
+| Speech analysis | OpenAI SDK with `gpt-4o-mini-transcribe` and `o4-mini` |
+| Analysis quota  | Upstash Redis                                          |
+| Staged audio    | Private Vercel Blob                                    |
+| Logging         | Pino structured logs                                   |
+| Testing         | Vitest and Playwright                                  |
 
-- OpenAI API for speech transcription and text analysis
+## Configuration
+
+When running locally outside of Compose, create `.env.local` using `.env.example` as a reference for required environment variables. When running or testing end-to-end with Compose, several environment variables must be provided through a root `.env` file. By default, all local usage utilizes a mock OpenAI client, unless an API key is provided.
+
+### Required environment variables for Compose usage
+
+| Variable                   | Description                                   |
+| -------------------------- | --------------------------------------------- |
+| `UPSTASH_REDIS_REST_URL`   | Upstash Redis REST endpoint                   |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token                      |
+| `BLOB_STORE_ID`            | Private Blob store identifier                 |
+| `VERCEL_OIDC_TOKEN`        | Workload identity used by Blob SDK operations |
+| `BLOB_WEBHOOK_PUBLIC_KEY`  | Used to verify upload completion callbacks    |
+
+During production, when a private Blob store is connected, the final three variables are provided automatically by Vercel.
+
+## Testing
+
+Quick verification:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+End-to-end browser tests:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
 
 ## Project Scope
 
-Grammar Tracker is a comprehensive end-to-end machine learning application rather than an isolated model demonstration. Integrating ML services with surrounding infrastructure, it includes user data persistence, a complete web interface, a stable production environment, and end-to-end testing.
+Grammar Tracker is a comprehensive end-to-end machine learning application rather than an isolated model demonstration. Integrating ML services with surrounding infrastructure, it includes user data persistence, a complete web interface, a stable production environment, and thorough testing procedures.
 
 This application is currently feature-complete and deployed.

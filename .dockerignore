@@ -1,0 +1,9 @@
+.next
+node_modules
+.env*
+!.env.example
+.vercel
+npm-debug.log
+playwright-report
+test-results
+blob-report
