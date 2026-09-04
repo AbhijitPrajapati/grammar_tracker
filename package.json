@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "node scripts/run-e2e.mjs",
     "start": "next start",
     "lint": "eslint"
   },
@@ -35,7 +34,6 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",

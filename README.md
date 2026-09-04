@@ -65,14 +65,10 @@ grammar_tracker/
 |   |-- interfaces/next/                  actions, queries
 |   |-- presentation/                     components, UI utilities
 |   `-- bootstrap/container.ts            composition root
-|-- tests/
-|   |-- unit/                             fast Vitest tests
-|   `-- e2e/                              Playwright browser tests
-|-- localdb/bootstrap.sql                 disposable local/E2E schema
+|-- tests                                 Vitest tests
+|-- localdb/bootstrap.sql                 disposable local schema
 |-- README.md
 |-- docker-compose.dev.yaml              local Next.js + PostgreSQL
-|-- docker-compose.e2e.yaml              disposable deterministic testing
-|-- Dockerfile                           local/E2E image
 ```
 
 ## Technology choices
@@ -89,40 +85,16 @@ grammar_tracker/
 | Analysis quota  | Upstash Redis                                          |
 | Staged audio    | Private Vercel Blob                                    |
 | Logging         | Pino structured logs                                   |
-| Testing         | Vitest and Playwright                                  |
-
-## Configuration
-
-When running locally outside of Compose, create `.env.local` using `.env.example` as a reference for required environment variables. When running or testing end-to-end with Compose, several environment variables must be provided through a root `.env` file. By default, all local usage utilizes a mock OpenAI client, unless an API key is provided.
-
-### Required environment variables for Compose usage
-
-| Variable                   | Description                                   |
-| -------------------------- | --------------------------------------------- |
-| `UPSTASH_REDIS_REST_URL`   | Upstash Redis REST endpoint                   |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token                      |
-| `BLOB_STORE_ID`            | Private Blob store identifier                 |
-| `VERCEL_OIDC_TOKEN`        | Workload identity used by Blob SDK operations |
-| `BLOB_WEBHOOK_PUBLIC_KEY`  | Used to verify upload completion callbacks    |
-
-During production, when a private Blob store is connected, the final three variables are provided automatically by Vercel.
+| Testing         | Vitest                                                 |
 
 ## Testing
 
-Quick verification:
+Run TSC, ESlint, and Vitest:
 
 ```bash
 npm run typecheck
 npm run lint
 npm test
-npm run build
-```
-
-End-to-end browser tests:
-
-```bash
-npx playwright install chromium
-npm run test:e2e
 ```
 
 ## Project Scope

@@ -1,4 +1,4 @@
--- Local/E2E bootstrap representation of the production schema
+-- Local bootstrap representation of the production schema
 -- The Next.js application never executes this file in
 -- production and never applies DDL at runtime or during a Vercel build
 
