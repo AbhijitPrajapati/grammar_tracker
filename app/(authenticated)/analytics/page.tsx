@@ -22,6 +22,7 @@ interface AnalyticsSearchParams {
   readonly category?: string | string[];
 }
 
+// Gets analytics selections from search parameters
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -29,8 +30,8 @@ export default async function AnalyticsPage({
 }) {
   const selected = await searchParams;
   const analytics = await getCurrentUserAnalytics(
-    selected.range,
-    selected.category,
+    firstValue(selected.range),
+    firstValue(selected.category),
   );
   const selectedDateRangeLabel =
     DATE_RANGE_OPTIONS.find((option) => option.value === analytics.dateRange)
@@ -94,4 +95,8 @@ export default async function AnalyticsPage({
       </div>
     </main>
   );
+}
+
+function firstValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }

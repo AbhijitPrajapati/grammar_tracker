@@ -13,6 +13,7 @@ export async function changePasswordAction(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // Verify valid password change inputs
   const parsed = passwordChangeSchema.safeParse({
     currentPassword: formData.get("currentPassword"),
     newPassword: formData.get("newPassword"),

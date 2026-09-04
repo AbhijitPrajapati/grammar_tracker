@@ -13,6 +13,7 @@ export async function authenticateAction(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  // Verify valid form input
   const parsed = authFormSchema.safeParse({
     mode: formData.get("mode"),
     email: formData.get("email"),
@@ -32,6 +33,7 @@ export async function authenticateAction(
     if (parsed.data.mode === "register") {
       const registered = await container.registerAndStartSession.execute(
         new EmailAddress(parsed.data.email),
+        // Construct NewPassword if registering
         new NewPassword(parsed.data.password),
       );
       token = registered.sessionToken;
@@ -50,6 +52,7 @@ export async function authenticateAction(
     );
   }
 
+  // Save the token to start the session
   await setSessionCookie(token);
   redirect("/");
 }

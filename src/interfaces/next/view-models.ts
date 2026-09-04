@@ -5,7 +5,7 @@ import type {
 } from "@/src/domain/analytics";
 import type { Speech } from "@/src/domain/speech";
 
-// Client-side SpeechView representation for uploaded speeches
+// Contains client-side representations for speeeches and analytics
 export interface SpeechView {
   readonly id: string;
   readonly createdAt: string;
@@ -38,28 +38,6 @@ export interface SpeechView {
   };
 }
 
-export interface DistributionView {
-  readonly totalSpeeches: number;
-  readonly mistakeFrequencies: readonly {
-    readonly category: SpeechView["analysis"]["frequencies"][number]["category"];
-    readonly occurrences: number;
-    readonly opportunities: number;
-  }[];
-}
-
-export interface TimeSeriesView {
-  readonly points: readonly {
-    readonly time: string;
-    readonly occurrences: number;
-    readonly opportunities: number;
-  }[];
-}
-
-export interface AnalyticsDashboardView {
-  readonly distribution: DistributionView;
-  readonly timeSeries: TimeSeriesView;
-}
-
 // Map domain Speech value to client-side SpeechView (userId is ommited)
 export function toSpeechView(speech: Speech): SpeechView {
   return {
@@ -83,9 +61,29 @@ export function toSpeechView(speech: Speech): SpeechView {
   };
 }
 
-export function toDistributionView(
-  distribution: Distribution,
-): DistributionView {
+export interface DistributionView {
+  readonly totalSpeeches: number;
+  readonly mistakeFrequencies: readonly {
+    readonly category: SpeechView["analysis"]["frequencies"][number]["category"];
+    readonly occurrences: number;
+    readonly opportunities: number;
+  }[];
+}
+
+export interface TimeSeriesView {
+  readonly points: readonly {
+    readonly time: string;
+    readonly occurrences: number;
+    readonly opportunities: number;
+  }[];
+}
+
+export interface AnalyticsDashboardView {
+  readonly distribution: DistributionView;
+  readonly timeSeries: TimeSeriesView;
+}
+
+function toDistributionView(distribution: Distribution): DistributionView {
   return {
     totalSpeeches: distribution.totalSpeeches,
     mistakeFrequencies: distribution.mistakeFrequencies.map((frequency) => ({
@@ -96,7 +94,7 @@ export function toDistributionView(
   };
 }
 
-export function toTimeSeriesView(timeSeries: TimeSeries): TimeSeriesView {
+function toTimeSeriesView(timeSeries: TimeSeries): TimeSeriesView {
   return {
     points: timeSeries.points.map((point) => ({
       time: point.time.toISOString(),

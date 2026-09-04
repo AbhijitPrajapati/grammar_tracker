@@ -8,6 +8,8 @@ export async function listCurrentUserSpeeches(): Promise<
   readonly SpeechView[]
 > {
   const user = await requireCurrentUser();
-  const speeches = await getApplicationContainer().listSpeeches.execute(user.id);
-  return speeches.map(toSpeechView);
+  const speeches = await getApplicationContainer().listSpeeches.execute(
+    user.id,
+  );
+  return speeches.map(toSpeechView); // Map all speeches to client-facing SpeechView
 }

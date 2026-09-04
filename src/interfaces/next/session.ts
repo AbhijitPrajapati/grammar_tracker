@@ -28,6 +28,13 @@ export async function requireCurrentUser(): Promise<UserAccount> {
   return user;
 }
 
+async function isSecureRequest(): Promise<boolean> {
+  return (
+    process.env.VERCEL === "1" ||
+    (await headers()).get("x-forwarded-proto") === "https"
+  );
+}
+
 export async function setSessionCookie(token: string): Promise<void> {
   (await cookies()).set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
@@ -45,11 +52,4 @@ export async function clearSessionCookie(): Promise<void> {
     sameSite: "lax",
     path: "/",
   });
-}
-
-async function isSecureRequest(): Promise<boolean> {
-  return (
-    process.env.VERCEL === "1" ||
-    (await headers()).get("x-forwarded-proto") === "https"
-  );
 }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { MISTAKE_CATEGORIES } from "@/src/domain/analysis";
 import { NewPassword } from "@/src/domain/user";
 
+// Base schema for all passwords
 const passwordSchema = z.string().superRefine((value, context) => {
   const length = Array.from(value).length;
   if (length < NewPassword.MIN_LENGTH || length > NewPassword.MAX_LENGTH) {
@@ -30,6 +31,7 @@ export const passwordChangeSchema = z
     message: "New passwords do not match.",
   });
 
+// Validation for input speechId during deletion
 export const speechIdSchema = z.uuid();
 
 // Validation for pathname and etag of uploaded audio
@@ -38,6 +40,7 @@ export const stagedAudioReferenceSchema = z.object({
   etag: z.string().min(1).max(512),
 });
 
+// Analytics settings selections
 export const dateRangeSelectionSchema = z
   .enum(["all_time", "yearly", "monthly", "weekly"])
   .catch("monthly");

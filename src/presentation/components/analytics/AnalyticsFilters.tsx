@@ -31,6 +31,7 @@ export function AnalyticsFilters({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  // Changes in selection change the query parameters
   function navigate(
     nextDateRange: DateRangeSelection,
     nextCategory: MistakeCategory,
