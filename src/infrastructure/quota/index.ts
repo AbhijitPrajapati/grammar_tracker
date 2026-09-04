@@ -1,2 +1,1 @@
-export * from "./settings";
-export * from "./upstash-analysis-quota";
+export { UpstashAnalysisQuota } from "./upstash-analysis-quota";

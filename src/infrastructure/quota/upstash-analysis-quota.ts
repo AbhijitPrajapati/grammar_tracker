@@ -5,16 +5,31 @@ import type { Redis } from "@upstash/redis";
 import type { AnalysisQuota } from "@/src/application/ports/services";
 import type { UserId } from "@/src/domain/user";
 
-import {
-  DAY_WINDOW_MS,
-  MINUTE_WINDOW_MS,
-  QUOTA_KEY_TTL_MS,
-  type AnalysisQuotaOptions,
-  readTimestamp,
-  validateQuotaOptions,
-} from "./settings";
+const MINUTE_WINDOW_MS = 60_000;
+const DAY_WINDOW_MS = 86_400_000;
+const KEY_PREFIX = "grammar-tracker:analysis-quota";
 
-export const UPSTASH_ANALYSIS_QUOTA_SCRIPT = `
+// Need extra millisecond because an attempt exactly
+// one day old is still inside the rolling window.
+const QUOTA_KEY_TTL_MS = DAY_WINDOW_MS + 1;
+
+export interface UpstashAnalysisQuotaOptions {
+  readonly minuteLimit: number;
+  readonly dayLimit: number;
+}
+
+function assertPositiveInteger(name: string, value: number): void {
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new RangeError(`${name} must be a positive integer`);
+  }
+}
+
+// Uses Lua script to ensure atomicity
+// Calculates boundaries based on day and minute windows
+// Removes entries that lie before day boundary
+// Counts attempts within each window
+// Adds only successful quota consumption
+const UPSTASH_ANALYSIS_QUOTA_SCRIPT = `
 local key = KEYS[1]
 local now = tonumber(ARGV[1])
 local minute_limit = tonumber(ARGV[2])
@@ -24,7 +39,6 @@ local member = ARGV[4]
 local minute_boundary = now - ${MINUTE_WINDOW_MS}
 local day_boundary = now - ${DAY_WINDOW_MS}
 
--- An attempt exactly on the lower boundary remains in its rolling window.
 redis.call("ZREMRANGEBYSCORE", key, "-inf", "(" .. day_boundary)
 
 local minute_count = redis.call("ZCOUNT", key, minute_boundary, "+inf")
@@ -39,35 +53,25 @@ redis.call("PEXPIRE", key, ${QUOTA_KEY_TTL_MS})
 return 1
 `;
 
-export interface UpstashAnalysisQuotaOptions extends AnalysisQuotaOptions {
-  readonly keyPrefix?: string;
-  readonly uniqueId?: () => string;
-}
-
-/** Distributed, atomic rolling quota for Vercel production instances. */
 export class UpstashAnalysisQuota implements AnalysisQuota {
   private readonly script: ReturnType<Redis["createScript"]>;
   private readonly minuteLimit: number;
   private readonly dayLimit: number;
-  private readonly clock: () => number;
-  private readonly keyPrefix: string;
-  private readonly uniqueId: () => string;
 
   constructor(redis: Redis, options: UpstashAnalysisQuotaOptions) {
-    validateQuotaOptions(options);
+    assertPositiveInteger("minuteLimit", options.minuteLimit);
+    assertPositiveInteger("dayLimit", options.dayLimit);
+
     this.minuteLimit = options.minuteLimit;
     this.dayLimit = options.dayLimit;
-    this.clock = options.clock ?? Date.now;
-    this.keyPrefix = options.keyPrefix ?? "grammar-tracker:analysis-quota";
-    this.uniqueId = options.uniqueId ?? randomUUID;
     this.script = redis.createScript<number>(UPSTASH_ANALYSIS_QUOTA_SCRIPT);
   }
 
   async tryConsume(userId: UserId): Promise<boolean> {
-    const now = readTimestamp(this.clock);
-    const member = `${now}:${this.uniqueId()}`;
+    const now = Date.now();
+    const member = `${now}:${randomUUID()}`;
     const result = await this.script.exec(
-      [`${this.keyPrefix}:${userId}`],
+      [`${KEY_PREFIX}:${userId}`],
       [String(now), String(this.minuteLimit), String(this.dayLimit), member],
     );
 
