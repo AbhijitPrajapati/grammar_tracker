@@ -9,8 +9,6 @@ import {
 } from "@/src/application/contracts/audio-format";
 import {
   buildStagedAudioPathname,
-  stagedAudioOwnerPrefix,
-  validateStagedAudioBasename,
   validateStagedAudioPathname,
 } from "@/src/application/contracts/staged-audio";
 import { InvalidAudio } from "@/src/application/errors";
@@ -39,31 +37,17 @@ describe("staged audio policy", () => {
   });
 
   it("builds the exact authenticated-owner slot for a supported format", () => {
-    expect(stagedAudioOwnerPrefix(USER_ID)).toBe(`speech-staging/${USER_ID}/`);
     expect(buildStagedAudioPathname(USER_ID, "webm")).toBe(
       `speech-staging/${USER_ID}/audio.webm`,
     );
   });
 
-  it.each([
-    "../other.wav",
-    "folder/recording.wav",
-    "folder\\recording.wav",
-    ".hidden.wav",
-    "two..dots.wav",
-    "space in name.wav",
-    "recording.WAV",
-    "recording.exe",
-    "recording",
-    "https://blob.example/recording.wav",
-  ])("rejects the unsafe or unsupported basename %s", (basename) => {
-    expect(() => validateStagedAudioBasename(basename)).toThrow(InvalidAudio);
-  });
-
-  it("accepts safe names for every supported extension", () => {
+  it("accepts the fixed pathname for every supported extension", () => {
     for (const extension of ALLOWED_AUDIO_EXTENSIONS) {
-      expect(validateStagedAudioBasename(`recording.${extension}`)).toEqual({
-        basename: `recording.${extension}`,
+      const pathname = buildStagedAudioPathname(USER_ID, extension);
+      expect(validateStagedAudioPathname(USER_ID, pathname)).toEqual({
+        pathname,
+        basename: `audio.${extension}`,
         extension,
       });
     }
@@ -83,25 +67,17 @@ describe("staged audio policy", () => {
     );
   });
 
-  it("rejects URLs, nested paths, and alternate filenames", () => {
-    expect(() =>
-      validateStagedAudioPathname(
-        USER_ID,
-        `https://example.test/speech-staging/${USER_ID}/audio.wav`,
-      ),
-    ).toThrow(InvalidAudio);
-    expect(() =>
-      validateStagedAudioPathname(
-        USER_ID,
-        `speech-staging/${USER_ID}/nested/audio.wav`,
-      ),
-    ).toThrow(InvalidAudio);
-    expect(() =>
-      validateStagedAudioPathname(
-        USER_ID,
-        `speech-staging/${USER_ID}/another-name.wav`,
-      ),
-    ).toThrow(InvalidAudio);
+  it.each([
+    `https://example.test/speech-staging/${USER_ID}/audio.wav`,
+    `speech-staging/${USER_ID}/nested/audio.wav`,
+    `speech-staging/${USER_ID}/another-name.wav`,
+    `speech-staging/${USER_ID}/audio.WAV`,
+    `speech-staging/${USER_ID}/audio.exe`,
+    `speech-staging/${USER_ID}/audio`,
+  ])("rejects the invalid pathname %s", (pathname) => {
+    expect(() => validateStagedAudioPathname(USER_ID, pathname)).toThrow(
+      InvalidAudio,
+    );
   });
 
   it("requires the content type to match the extension", () => {

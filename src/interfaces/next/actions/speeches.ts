@@ -17,6 +17,7 @@ import { toSpeechView, type SpeechView } from "../view-models";
 export async function processSpeechAction(
   input: StagedAudioReference,
 ): Promise<ActionState<SpeechView | undefined>> {
+  // Verify valid audio reference
   const parsed = stagedAudioReferenceSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -59,6 +60,7 @@ export async function deleteSpeechAction(
   }
 }
 
+// Update pages that display speech information when speeches are added or removed
 function revalidateSpeechViews(): void {
   revalidatePath("/speeches");
   revalidatePath("/analytics");

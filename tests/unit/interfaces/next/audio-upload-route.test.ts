@@ -110,7 +110,6 @@ describe("audio upload token route", () => {
         maximumSizeInBytes: MAX_STAGED_AUDIO_BYTES,
         allowOverwrite: true,
         addRandomSuffix: false,
-        cacheControlMaxAge: 60,
       },
     });
   });

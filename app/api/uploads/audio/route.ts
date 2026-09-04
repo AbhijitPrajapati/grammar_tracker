@@ -51,11 +51,10 @@ export async function POST(request: Request): Promise<Response> {
             validUntil,
             allowedContentTypes: [...ALLOWED_AUDIO_CONTENT_TYPES],
             maximumSizeInBytes: MAX_STAGED_AUDIO_BYTES,
-            // Each user has one ETag-protected staging slot per supported
-            // format. This bounds abandoned storage without adding a table.
+            // Each user has one etag-protected staging slot per supported format
+            // This bounds abandoned storage
             allowOverwrite: true,
             addRandomSuffix: false,
-            cacheControlMaxAge: 60,
           },
         };
       },

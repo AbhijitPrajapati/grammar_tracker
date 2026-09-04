@@ -32,6 +32,7 @@ export const passwordChangeSchema = z
 
 export const speechIdSchema = z.uuid();
 
+// Validation for pathname and etag of uploaded audio
 export const stagedAudioReferenceSchema = z.object({
   pathname: z.string().min(1).max(1_024),
   etag: z.string().min(1).max(512),
@@ -43,6 +44,7 @@ export const dateRangeSelectionSchema = z
 
 export const mistakeCategorySchema = z.enum(MISTAKE_CATEGORIES);
 
+// Construct specific field errors from zod validation failure
 export function fieldErrors(error: z.ZodError): Record<string, string[]> {
   const errors: Record<string, string[]> = {};
   for (const issue of error.issues) {

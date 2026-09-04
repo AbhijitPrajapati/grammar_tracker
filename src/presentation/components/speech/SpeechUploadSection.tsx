@@ -1,7 +1,7 @@
 "use client";
 
 import { uploadPresigned } from "@vercel/blob/client";
-import { useMemo, useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 
 import { SpeechResultCard } from "@/src/presentation/components/speech/SpeechResultCard";
 import { Button } from "@/src/presentation/components/ui/button";
@@ -18,6 +18,7 @@ import { processSpeechAction } from "@/src/interfaces/next/actions/speeches";
 import type { ActionState } from "@/src/interfaces/next/action-state";
 import type { SpeechView } from "@/src/interfaces/next/view-models";
 import {
+  ALLOWED_AUDIO_EXTENSIONS,
   isAllowedAudioContentType,
   isAllowedAudioExtension,
   isAudioContentTypeAllowedForExtension,
@@ -27,26 +28,35 @@ import {
 import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
 
 type SpeechActionState = ActionState<SpeechView | undefined>;
+const INITIAL_STATE: SpeechActionState = { status: "idle" };
+const MULTIPART_THRESHOLD_BYTES = 5 * 1024 * 1024;
+
+// Audio validation result
 type AudioValidation =
   | { readonly valid: true; readonly extension: AllowedAudioExtension }
   | { readonly valid: false; readonly message: string };
 
-const INITIAL_STATE: SpeechActionState = { status: "idle" };
-const MULTIPART_THRESHOLD_BYTES = 5 * 1024 * 1024;
+// Accept field for file input
+const AUDIO_FILE_ACCEPT = ALLOWED_AUDIO_EXTENSIONS.map(
+  (extension) => `.${extension}`,
+).join(",");
 
 export function SpeechUploadSection({ userId }: { readonly userId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  // User-facing errors
   const [clientError, setClientError] = useState<string | null>(null);
+  // Contains the result of the upload + processing
   const [actionState, setActionState] =
     useState<SpeechActionState>(INITIAL_STATE);
+  // Uploading and processing are seperate processes
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, startProcessing] = useTransition();
 
   const isBusy = isUploading || isProcessing;
   const result =
     actionState.status === "success" ? (actionState.data ?? null) : null;
-  const fileName = useMemo(() => file?.name ?? "No file selected", [file]);
+  const fileName = file?.name ?? "No file selected";
 
   async function submitAudio(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -68,6 +78,7 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
     setIsUploading(true);
 
     try {
+      // Blob upload
       const pathname = buildStagedAudioPathname(userId, validation.extension);
       const blob = await uploadPresigned(pathname, selected, {
         access: "private",
@@ -79,6 +90,8 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
 
       setIsUploading(false);
       setUploadProgress(null);
+
+      // Process audio after upload
       startProcessing(async () => {
         try {
           setActionState(
@@ -88,6 +101,8 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
             }),
           );
         } catch {
+          // Catches errors relating to reaching the action itself
+          // Errors returned by the action are pushed to the action state automatically
           setActionState({ status: "error", message: "Upload failed" });
         }
       });
@@ -118,7 +133,7 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
                 id="audio-file"
                 name="file"
                 type="file"
-                accept=".flac,.mp3,.mp4,.mpeg,.mpga,.m4a,.ogg,.wav,.webm,audio/*"
+                accept={AUDIO_FILE_ACCEPT}
                 required
                 disabled={isBusy}
                 onChange={(event) => {
@@ -174,6 +189,7 @@ function validateAudioFile(file: File): AudioValidation {
     return { valid: false, message: "Audio must be no larger than 25 MiB" };
   }
 
+  // Validate file extention and content type
   const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
   if (!isAllowedAudioExtension(extension)) {
     return {

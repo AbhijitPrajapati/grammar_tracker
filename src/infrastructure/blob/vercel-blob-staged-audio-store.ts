@@ -8,17 +8,25 @@ import {
 } from "@vercel/blob";
 
 import { AudioSample } from "@/src/application/contracts/audio";
-import type { StagedAudioReference } from "@/src/application/contracts/staged-audio";
-import { validateStagedAudioPathname } from "@/src/application/contracts/staged-audio";
+import {
+  isAllowedAudioContentType,
+  isAudioContentTypeAllowedForExtension,
+  MAX_STAGED_AUDIO_BYTES,
+  type AllowedAudioContentType,
+} from "@/src/application/contracts/audio-format";
+import {
+  validateStagedAudioPathname,
+  type StagedAudioReference,
+  type ValidatedStagedAudioPath,
+} from "@/src/application/contracts/staged-audio";
 import { InvalidAudio } from "@/src/application/errors";
 import type { StagedAudioStore } from "@/src/application/ports/services";
 import type { UserId } from "@/src/domain/user";
-import {
-  validateStagedAudioEtag,
-  validateStagedAudioMetadata,
-  type StagedAudioBlobMetadata,
-} from "./staged-audio-metadata";
 
+// Used to validate that etags don't contain unexpected characters
+const OPAQUE_ETAG_CHARACTERS = /^[\x21-\x7e]+$/;
+
+// Option interfaces for vercel blob operations
 interface HeadOptions {
   readonly storeId: string;
 }
@@ -32,13 +40,34 @@ interface DeleteOptions extends HeadOptions {
   readonly ifMatch: string;
 }
 
+// Metadata of file retrieved from vercel blob
+// Will be cross-referenced with the expected file metadata
+export interface StagedAudioBlobMetadata {
+  readonly pathname: unknown;
+  readonly etag: unknown;
+  readonly size: unknown;
+  readonly contentType: unknown;
+}
+
+// Complete return type of vercelBlobGet
 export interface PrivateBlobGetResult {
   readonly statusCode: number;
   readonly stream: ReadableStream<Uint8Array> | null;
   readonly blob: StagedAudioBlobMetadata;
 }
 
-/** The narrow slice of @vercel/blob used by this adapter. */
+// Return type after cross-reference validation
+interface ValidatedStagedAudioMetadata {
+  readonly size: number;
+  readonly contentType: AllowedAudioContentType;
+}
+
+// Return type after validation of incoming audio reference
+interface ValidatedStagedAudioReference extends ValidatedStagedAudioPath {
+  readonly etag: string;
+}
+
+// The narrow slice of @vercel/blob used by this adapter
 export interface PrivateBlobClient {
   head(
     pathname: string,
@@ -57,10 +86,7 @@ const defaultBlobClient: PrivateBlobClient = {
   del: vercelBlobDelete,
 };
 
-/**
- * Resolves user-owned audio from an OIDC-connected private Vercel Blob store.
- * No read/write token or Blob URL is accepted by this adapter.
- */
+// Resolves audio from private Vercel Blob store.
 export class VercelBlobStagedAudioStore implements StagedAudioStore {
   private readonly storeId: string;
 
@@ -68,6 +94,7 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
     storeId: string,
     private readonly client: PrivateBlobClient = defaultBlobClient,
   ) {
+    // Valid storeId
     if (storeId.length === 0 || storeId !== storeId.trim()) {
       throw new TypeError("A Vercel Blob store ID is required");
     }
@@ -78,15 +105,12 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
     userId: UserId,
     reference: StagedAudioReference,
   ): Promise<AudioSample> {
-    const pathname = validateStagedAudioPathname(
-      userId,
-      reference.pathname,
-    ).pathname;
-    const etag = validateStagedAudioEtag(reference.etag);
+    const expected = validateStagedAudioReference(userId, reference);
 
+    // Fetch only the header data of the blob
     let headMetadata: StagedAudioBlobMetadata;
     try {
-      headMetadata = await this.client.head(pathname, {
+      headMetadata = await this.client.head(expected.pathname, {
         storeId: this.storeId,
       });
     } catch (error) {
@@ -96,36 +120,29 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
       throw error;
     }
 
-    const validated = validateStagedAudioMetadata(
-      userId,
-      pathname,
-      etag,
-      headMetadata,
-    );
+    const initial = validateStagedAudioMetadata(expected, headMetadata);
 
     return new AudioSample({
-      sizeBytes: validated.size,
-      filename: validated.basename,
-      mediaType: validated.contentType,
+      sizeBytes: initial.size,
+      filename: expected.basename,
+      mediaType: initial.contentType,
+      // Function to actually read the audio file
       openStream: async () => {
-        const result = await this.client.get(pathname, {
+        const result = await this.client.get(expected.pathname, {
           access: "private",
           useCache: false,
           storeId: this.storeId,
         });
+        // Ensure audio was found
         if (result === null || result.statusCode !== 200 || !result.stream) {
           throw new InvalidAudio("Staged audio was not found");
         }
 
-        const current = validateStagedAudioMetadata(
-          userId,
-          pathname,
-          etag,
-          result.blob,
-        );
+        // Ensure that the retrieved file still matches what was expected
+        const current = validateStagedAudioMetadata(expected, result.blob);
         if (
-          current.size !== validated.size ||
-          current.contentType !== validated.contentType
+          current.size !== initial.size ||
+          current.contentType !== initial.contentType
         ) {
           throw new InvalidAudio("Staged audio metadata changed");
         }
@@ -135,14 +152,72 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
   }
 
   async delete(userId: UserId, reference: StagedAudioReference): Promise<void> {
-    const pathname = validateStagedAudioPathname(
-      userId,
-      reference.pathname,
-    ).pathname;
-    const etag = validateStagedAudioEtag(reference.etag);
-    await this.client.del(pathname, {
-      ifMatch: etag,
+    const expected = validateStagedAudioReference(userId, reference);
+    await this.client.del(expected.pathname, {
+      ifMatch: expected.etag,
       storeId: this.storeId,
     });
   }
+}
+
+// Ensures a valid incoming audio reference
+function validateStagedAudioReference(
+  userId: UserId,
+  reference: StagedAudioReference,
+): ValidatedStagedAudioReference {
+  return {
+    // Recheck for user ownership
+    ...validateStagedAudioPathname(userId, reference.pathname),
+    etag: validateStagedAudioEtag(reference.etag),
+  };
+}
+
+// Make sure etag does not contain unexpected characters
+function validateStagedAudioEtag(etag: string): string {
+  if (
+    typeof etag !== "string" ||
+    etag.length === 0 ||
+    etag.length > 512 ||
+    !OPAQUE_ETAG_CHARACTERS.test(etag)
+  ) {
+    throw new InvalidAudio("Invalid staged audio ETag");
+  }
+  return etag;
+}
+
+// Validates what the client claims to have uploaded (expected)
+// against the retrieved metadata from the blob (metadata)
+function validateStagedAudioMetadata(
+  expected: ValidatedStagedAudioReference,
+  metadata: StagedAudioBlobMetadata,
+): ValidatedStagedAudioMetadata {
+  if (metadata.pathname !== expected.pathname) {
+    throw new InvalidAudio("Staged audio pathname changed");
+  }
+  if (metadata.etag !== expected.etag) {
+    throw new InvalidAudio("Staged audio ETag changed");
+  }
+  if (
+    typeof metadata.size !== "number" ||
+    !Number.isSafeInteger(metadata.size) ||
+    metadata.size <= 0 ||
+    metadata.size > MAX_STAGED_AUDIO_BYTES
+  ) {
+    throw new InvalidAudio("Invalid staged audio size");
+  }
+  if (
+    typeof metadata.contentType !== "string" ||
+    !isAllowedAudioContentType(metadata.contentType) ||
+    !isAudioContentTypeAllowedForExtension(
+      expected.extension,
+      metadata.contentType,
+    )
+  ) {
+    throw new InvalidAudio("Invalid staged audio content type");
+  }
+
+  return {
+    size: metadata.size,
+    contentType: metadata.contentType,
+  };
 }

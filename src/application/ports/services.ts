@@ -24,11 +24,8 @@ export interface AnalysisQuota {
   tryConsume(userId: UserId): Promise<boolean>;
 }
 
-/**
- * Resolves temporary audio without exposing a storage vendor or URL to the
- * application. Implementations must enforce that the reference belongs to the
- * authenticated user.
- */
+// Manages temporary uploaded audio
+// Implementations must enforce that the reference belongs to the authenticated user
 export interface StagedAudioStore {
   resolve(
     userId: UserId,

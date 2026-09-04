@@ -5,6 +5,7 @@ import type {
 } from "@/src/domain/analytics";
 import type { Speech } from "@/src/domain/speech";
 
+// Client-side SpeechView representation for uploaded speeches
 export interface SpeechView {
   readonly id: string;
   readonly createdAt: string;
@@ -59,6 +60,7 @@ export interface AnalyticsDashboardView {
   readonly timeSeries: TimeSeriesView;
 }
 
+// Map domain Speech value to client-side SpeechView (userId is ommited)
 export function toSpeechView(speech: Speech): SpeechView {
   return {
     id: speech.id,

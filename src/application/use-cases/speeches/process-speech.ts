@@ -13,7 +13,7 @@ export class ProcessSpeech {
   constructor(
     private readonly stagedAudio: StagedAudioStore,
     private readonly speeches: SpeechRepository,
-    private readonly grammarAnalyzer: SpeechAnalyzer,
+    private readonly speechAnalyzer: SpeechAnalyzer,
     private readonly quota: AnalysisQuota,
     private readonly reportCleanupFailure: (error: unknown) => void = () =>
       undefined,
@@ -29,11 +29,11 @@ export class ProcessSpeech {
         throw new AnalysisQuotaReached();
       }
 
-      const response = await this.grammarAnalyzer.analyze(audio);
+      const result = await this.speechAnalyzer.analyze(audio);
       return await this.speeches.create(
         userId,
-        response.transcript,
-        response.analysis,
+        result.transcript,
+        result.analysis,
       );
     } catch (error) {
       if (error instanceof InferenceQuotaReached) {
@@ -41,7 +41,7 @@ export class ProcessSpeech {
       }
       throw error;
     } finally {
-      // Cleanup the audio file
+      // Cleanup the staged audio file
       await this.stagedAudio.delete(userId, reference).catch((error) => {
         this.reportCleanupFailure(error);
       });

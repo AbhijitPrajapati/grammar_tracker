@@ -119,6 +119,7 @@ describe("VercelBlobStagedAudioStore", () => {
     ["pathname", { pathname: `${PATHNAME}-changed` }],
     ["ETag", { etag: "different-etag" }],
     ["empty size", { size: 0 }],
+    ["fractional size", { size: 1.5 }],
     ["oversized content", { size: MAX_STAGED_AUDIO_BYTES + 1 }],
     ["non-audio MIME", { contentType: "video/webm" }],
     ["extension/MIME mismatch", { contentType: "audio/mpeg" }],
@@ -224,7 +225,20 @@ describe("VercelBlobStagedAudioStore", () => {
     expect(fake.del).not.toHaveBeenCalled();
   });
 
-  it("rejects URL references and malformed ETags before any Blob operation", async () => {
+  it.each(["", "value with spaces", "value\r\nheader: injected"])(
+    "rejects the malformed ETag %j before any Blob operation",
+    async (etag) => {
+      const fake = privateBlobClient();
+      const store = new VercelBlobStagedAudioStore(STORE_ID, fake.client);
+
+      await expect(
+        store.delete(USER_ID, { pathname: PATHNAME, etag }),
+      ).rejects.toBeInstanceOf(InvalidAudio);
+      expect(fake.del).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects URL references before any Blob operation", async () => {
     const fake = privateBlobClient();
     const store = new VercelBlobStagedAudioStore(STORE_ID, fake.client);
 
@@ -234,11 +248,7 @@ describe("VercelBlobStagedAudioStore", () => {
         etag: ETAG,
       }),
     ).rejects.toBeInstanceOf(InvalidAudio);
-    await expect(
-      store.delete(USER_ID, { pathname: PATHNAME, etag: "" }),
-    ).rejects.toBeInstanceOf(InvalidAudio);
     expect(fake.head).not.toHaveBeenCalled();
-    expect(fake.del).not.toHaveBeenCalled();
   });
 
   it("requires an explicit nonblank OIDC-connected store ID", () => {

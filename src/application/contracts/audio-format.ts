@@ -1,6 +1,6 @@
 export const MAX_STAGED_AUDIO_BYTES = 25 * 1024 * 1024;
 
-// Extensions allowed by OpenAI transcription.
+// Extensions allowed by speech-analysis
 export const ALLOWED_AUDIO_EXTENSIONS = [
   "flac",
   "mp3",
@@ -15,7 +15,7 @@ export const ALLOWED_AUDIO_EXTENSIONS = [
 
 export type AllowedAudioExtension = (typeof ALLOWED_AUDIO_EXTENSIONS)[number];
 
-// MIME types for the allowed extensions.
+// MIME types for the allowed extensions
 export const ALLOWED_AUDIO_CONTENT_TYPES = [
   "audio/flac",
   "audio/x-flac",
@@ -33,7 +33,7 @@ export const ALLOWED_AUDIO_CONTENT_TYPES = [
 export type AllowedAudioContentType =
   (typeof ALLOWED_AUDIO_CONTENT_TYPES)[number];
 
-// Mapping from extension to compatible content types.
+// Mapping from extension to compatible content types
 const CONTENT_TYPES_BY_EXTENSION: Readonly<
   Record<AllowedAudioExtension, readonly AllowedAudioContentType[]>
 > = {
