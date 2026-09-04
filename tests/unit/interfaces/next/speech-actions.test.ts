@@ -68,7 +68,6 @@ describe("staged speech processing action", () => {
     });
     expect(doubles.processSpeech).toHaveBeenCalledWith(USER_ID, REFERENCE);
     expect(doubles.revalidatePath.mock.calls.map(([path]) => path)).toEqual([
-      "/",
       "/speeches",
       "/analytics",
     ]);

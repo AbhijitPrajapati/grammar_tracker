@@ -1,15 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AudioSample } from "@/src/application/contracts/audio";
-import { Analysis } from "@/src/domain/analysis";
 import type { OpenAiClient } from "@/src/infrastructure/openai/client";
 import {
   DETERMINISTIC_TRANSCRIPT,
   DeterministicSpeechAnalyzer,
-  DeterministicTranscriber,
 } from "@/src/infrastructure/openai/deterministic";
 import { OpenAiSpeechAnalyzer } from "@/src/infrastructure/openai/speech-analyzer";
-import { OpenAiTranscriber } from "@/src/infrastructure/openai/transcriber";
 
 function stream(byte: number): ReadableStream<Uint8Array> {
   return new ReadableStream({
@@ -20,19 +17,24 @@ function stream(byte: number): ReadableStream<Uint8Array> {
   });
 }
 
-describe("OpenAI adapters", () => {
-  it("reopens audio when the client retries the transcription operation", async () => {
+function audioSample(
+  openStream: () => Promise<ReadableStream<Uint8Array>> = async () => stream(1),
+): AudioSample {
+  return new AudioSample({
+    sizeBytes: 1,
+    filename: "practice.webm",
+    mediaType: "audio/webm",
+    openStream,
+  });
+}
+
+describe("OpenAI speech analyzer", () => {
+  it("reopens audio when the client retries transcription", async () => {
     const openStream = vi
       .fn<() => Promise<ReadableStream<Uint8Array>>>()
       .mockResolvedValueOnce(stream(1))
       .mockResolvedValueOnce(stream(2));
-    const audio = new AudioSample({
-      sizeBytes: 1,
-      filename: "practice.webm",
-      mediaType: "audio/webm",
-      openStream,
-    });
-    const withResponse = vi
+    const transcriptionWithResponse = vi
       .fn<() => Promise<unknown>>()
       .mockRejectedValueOnce(new Error("retry me"))
       .mockResolvedValueOnce({
@@ -45,27 +47,44 @@ describe("OpenAI adapters", () => {
         file: { readonly name?: string; readonly type?: string };
       }) => {
         void requestInput;
-        return { withResponse };
+        return { withResponse: transcriptionWithResponse };
       },
     );
+    const parse = vi.fn(() => ({
+      withResponse: async () => ({
+        data: {
+          output_parsed: {
+            mistakes: [],
+            frequencies: [],
+            feedback: "Well done.",
+          },
+        },
+        request_id: "req_analysis",
+      }),
+    }));
     const execute = vi.fn(
-      async (
-        _operation: string,
-        request: () => Promise<{ data: string; requestId: string | null }>,
-      ) => {
-        await request().catch(() => undefined);
+      async (operation: string, request: () => Promise<{ data: unknown }>) => {
+        if (operation === "transcription") {
+          await request().catch(() => undefined);
+        }
         return (await request()).data;
       },
     );
     const client = {
-      sdk: { audio: { transcriptions: { create } } },
+      sdk: {
+        audio: { transcriptions: { create } },
+        responses: { parse },
+      },
       execute,
     } as unknown as OpenAiClient;
 
-    await expect(
-      new OpenAiTranscriber(client, "gpt-4o-mini-transcribe").transcribe(audio),
-    ).resolves.toBe("I spoke clearly.");
+    const result = await new OpenAiSpeechAnalyzer(
+      client,
+      "gpt-4o-mini-transcribe",
+      "o4-mini",
+    ).analyze(audioSample(openStream));
 
+    expect(result.transcript).toBe("I spoke clearly.");
     expect(openStream).toHaveBeenCalledTimes(2);
     expect(create).toHaveBeenCalledTimes(2);
     expect(create.mock.calls[0]?.[0]).toMatchObject({
@@ -78,7 +97,7 @@ describe("OpenAI adapters", () => {
     expect(execute).toHaveBeenCalledWith("transcription", expect.any(Function));
   });
 
-  it("requests strict structured output and maps snake-case provider fields", async () => {
+  it("requests structured analysis and maps provider fields", async () => {
     const output = {
       mistakes: [
         {
@@ -93,6 +112,12 @@ describe("OpenAI adapters", () => {
       ],
       feedback: "Review past tense.",
     };
+    const create = vi.fn(() => ({
+      withResponse: async () => ({
+        data: { text: "I go yesterday" },
+        request_id: "req_transcription",
+      }),
+    }));
     const parse = vi.fn(
       (requestInput: {
         model: string;
@@ -110,29 +135,29 @@ describe("OpenAI adapters", () => {
       },
     );
     const execute = vi.fn(
-      async (
-        _operation: string,
-        request: () => Promise<{
-          data: { output_parsed: typeof output };
-          requestId: string | null;
-        }>,
-      ) => (await request()).data,
+      async (_operation: string, request: () => Promise<{ data: unknown }>) =>
+        (await request()).data,
     );
     const client = {
-      sdk: { responses: { parse } },
+      sdk: {
+        audio: { transcriptions: { create } },
+        responses: { parse },
+      },
       execute,
     } as unknown as OpenAiClient;
 
-    const result = await new OpenAiSpeechAnalyzer(client, "o4-mini").analyze(
-      "I go yesterday",
-    );
+    const result = await new OpenAiSpeechAnalyzer(
+      client,
+      "gpt-4o-mini-transcribe",
+      "o4-mini",
+    ).analyze(audioSample());
 
-    expect(result).toBeInstanceOf(Analysis);
-    expect(result.mistakes[0]).toMatchObject({
+    expect(result.transcript).toBe("I go yesterday");
+    expect(result.analysis.mistakes[0]).toMatchObject({
       originalText: "I go yesterday",
       correction: "I went yesterday",
     });
-    expect(result.frequencies[0]).toMatchObject({
+    expect(result.analysis.frequencies[0]).toMatchObject({
       category: "verb_tense",
       occurrences: 1,
       opportunities: 1,
@@ -174,6 +199,16 @@ describe("OpenAI adapters", () => {
   it("rejects a parsed response with no structured payload", async () => {
     const client = {
       sdk: {
+        audio: {
+          transcriptions: {
+            create: () => ({
+              withResponse: async () => ({
+                data: { text: "Transcript" },
+                request_id: "req_transcription",
+              }),
+            }),
+          },
+        },
         responses: {
           parse: () => ({
             withResponse: async () => ({
@@ -185,28 +220,35 @@ describe("OpenAI adapters", () => {
       },
       execute: async (
         _operation: string,
-        request: () => Promise<{ data: { output_parsed: null } }>,
+        request: () => Promise<{ data: unknown }>,
       ) => (await request()).data,
     } as unknown as OpenAiClient;
 
     await expect(
-      new OpenAiSpeechAnalyzer(client, "o4-mini").analyze("Transcript"),
+      new OpenAiSpeechAnalyzer(
+        client,
+        "gpt-4o-mini-transcribe",
+        "o4-mini",
+      ).analyze(audioSample()),
     ).rejects.toThrow("did not satisfy the analysis schema");
   });
 
   it("preserves the deterministic E2E fixture exactly", async () => {
-    const transcript = await new DeterministicTranscriber().transcribe();
-    const analysis = await new DeterministicSpeechAnalyzer().analyze();
+    const result = await new DeterministicSpeechAnalyzer().analyze(
+      audioSample(),
+    );
 
-    expect(transcript).toBe(DETERMINISTIC_TRANSCRIPT);
-    expect(transcript).toBe("She go to the store yesterday and buy two apple.");
-    expect(analysis.mistakes.map(({ category }) => category)).toEqual([
+    expect(result.transcript).toBe(DETERMINISTIC_TRANSCRIPT);
+    expect(result.transcript).toBe(
+      "She go to the store yesterday and buy two apple.",
+    );
+    expect(result.analysis.mistakes.map(({ category }) => category)).toEqual([
       "subject_verb_agreement",
       "verb_tense",
       "plurality",
     ]);
-    expect(analysis.frequencies).toHaveLength(6);
-    expect(analysis.feedback).toBe(
+    expect(result.analysis.frequencies).toHaveLength(6);
+    expect(result.analysis.feedback).toBe(
       "Good effort. Focus on agreement, tense, and plural nouns.",
     );
   });

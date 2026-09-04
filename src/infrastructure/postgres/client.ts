@@ -14,7 +14,7 @@ const globalDatabase = globalThis as typeof globalThis & {
   grammarTrackerDatabase?: Database;
 };
 
-export function getPool(): Pool {
+function getPool(): Pool {
   if (!globalDatabase.grammarTrackerPool) {
     const environment = getServerEnvironment();
     const pool = new Pool({

@@ -279,7 +279,7 @@ describe("account use cases", () => {
 });
 
 describe("speech use cases", () => {
-  it("consumes quota, transcribes, analyzes, then atomically creates speech", async () => {
+  it("consumes quota, analyzes audio, then atomically creates speech", async () => {
     const calls: string[] = [];
     const quota: AnalysisQuota = {
       tryConsume: async () => {
@@ -287,16 +287,10 @@ describe("speech use cases", () => {
         return true;
       },
     };
-    const transcriber: Transcriber = {
-      transcribe: async () => {
-        calls.push("transcribe");
-        return "I spoke clearly.";
-      },
-    };
     const analyzer: SpeechAnalyzer = {
-      analyze: async (transcript) => {
-        calls.push(`analyze:${transcript}`);
-        return analysis;
+      analyze: async () => {
+        calls.push("analyze-audio");
+        return { transcript: "I spoke clearly.", analysis };
       },
     };
     const speeches = speechRepository({
@@ -315,7 +309,6 @@ describe("speech use cases", () => {
     const result = await new ProcessSpeech(
       stagedAudioStore(calls),
       speeches,
-      transcriber,
       analyzer,
       quota,
     ).execute(USER_ID, STAGED_AUDIO_REFERENCE);
@@ -324,8 +317,7 @@ describe("speech use cases", () => {
     assert.deepEqual(calls, [
       "resolve-audio",
       "quota",
-      "transcribe",
-      "analyze:I spoke clearly.",
+      "analyze-audio",
       "create-aggregate",
       "delete-audio",
     ]);
@@ -337,12 +329,11 @@ describe("speech use cases", () => {
       stagedAudioStore(),
       speechRepository(),
       {
-        transcribe: async () => {
+        analyze: async () => {
           providerCalled = true;
-          return "";
+          return { transcript: "", analysis };
         },
       },
-      { analyze: async () => analysis },
       { tryConsume: async () => false },
     );
 
@@ -358,11 +349,10 @@ describe("speech use cases", () => {
       stagedAudioStore(),
       speechRepository(),
       {
-        transcribe: async () => {
+        analyze: async () => {
           throw new InferenceQuotaReached();
         },
       },
-      { analyze: async () => analysis },
       { tryConsume: async () => true },
     );
     await assert.rejects(
