@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE users (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    email citext(320) NOT NULL,
+    email citext NOT NULL,
     password_hash varchar(255) NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT users_pkey PRIMARY KEY (id)

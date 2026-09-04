@@ -31,11 +31,20 @@ export async function POST(request: Request): Promise<Response> {
       body,
       webhookPublicKey: environment.blobWebhookPublicKey,
       getSignedToken: async (pathname) => {
+
+        getLogger().info("Resolving upload user");
+
         const user = await getCurrentUser();
+
+        getLogger().info("Upload user resolved");
+
         if (user === null) throw new UploadAuthenticationError();
 
         validateStagedAudioPathname(user.id, pathname);
         const validUntil = Date.now() + SIGNED_UPLOAD_LIFETIME_MS;
+
+        getLogger().info("Issuing Blob signed token");
+
         const token = await issueSignedToken({
           storeId: environment.blobStoreId,
           pathname,
@@ -44,6 +53,8 @@ export async function POST(request: Request): Promise<Response> {
           maximumSizeInBytes: MAX_AUDIO_INPUT_BYTES,
           validUntil,
         });
+
+        getLogger().info("Blob signed token issued");
 
         return {
           token,
