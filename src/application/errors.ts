@@ -60,7 +60,7 @@ export class AnalysisQuotaReached extends ApplicationError {
   }
 }
 
-/** Adapter-level signal translated into AnalysisQuotaReached by the use case. */
+// Adapter-level signal translated into AnalysisQuotaReached by the use case
 export class InferenceQuotaReached extends Error {
   constructor(
     message = "Analysis provider quota exhausted",

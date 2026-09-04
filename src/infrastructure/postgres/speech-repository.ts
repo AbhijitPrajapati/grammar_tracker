@@ -31,7 +31,7 @@ export class PostgresSpeechRepository implements SpeechRepository {
         throw new Error("Creating a speech returned no row");
       }
 
-      // Insert into analytics table if entries exist
+      // Insert into analytics table only if entries exist
       if (analysis.frequencies.length > 0) {
         await transaction.insert(mistakeFrequencies).values(
           analysis.frequencies.map((frequency) => ({

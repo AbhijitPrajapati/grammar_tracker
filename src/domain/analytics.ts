@@ -16,7 +16,6 @@ export class DateRange {
     const start = properties.start ?? null;
     const end = properties.end ?? null;
 
-    // Validate dates
     if (start !== null && Number.isNaN(start.getTime())) {
       throw new TypeError("Date range start must be a valid date");
     }
@@ -56,11 +55,10 @@ export interface TimeSeries {
 export const TIME_BUCKETS = ["day", "week", "month", "year"] as const;
 export type TimeBucket = (typeof TIME_BUCKETS)[number];
 
+// Get time bucket from date range
 export function timeBucketFor(dateRange: DateRange): TimeBucket {
   const duration = dateRange.durationMilliseconds;
   if (duration === null) return "month";
-
-  // Simple algorithm to get time bucket from date range
   const days = Math.floor(duration / MILLISECONDS_PER_DAY);
   if (days <= 14) return "day";
   if (days <= 90) return "week";
@@ -68,7 +66,6 @@ export function timeBucketFor(dateRange: DateRange): TimeBucket {
   return "year";
 }
 
-// Full analytics results
 export interface AnalyticsDashboard {
   readonly distribution: Distribution;
   readonly timeSeries: TimeSeries;

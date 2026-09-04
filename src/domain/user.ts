@@ -9,7 +9,6 @@ export class EmailAddress {
     const local = normalized.slice(0, separator);
     const domain = normalized.slice(separator + 1);
 
-    // Validate email address
     if (separator < 0 || local.length === 0 || !domain.includes(".")) {
       throw new TypeError("Invalid email address");
     }
@@ -31,7 +30,6 @@ export class NewPassword {
 
   constructor(value: string) {
     const length = Array.from(value).length;
-    // Validate password lengths
     if (length < NewPassword.MIN_LENGTH || length > NewPassword.MAX_LENGTH) {
       throw new RangeError(
         `Password must be between ${NewPassword.MIN_LENGTH} and ${NewPassword.MAX_LENGTH} characters`,

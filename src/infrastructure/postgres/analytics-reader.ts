@@ -49,7 +49,6 @@ export class PostgresAnalyticsReader implements AnalyticsReader {
   ): Promise<Distribution> {
     const scope = speechScope(userId, dateRange);
 
-    // Count rows
     const [totalRow] = await this.database
       .select({ total: sql<unknown>`count(${speeches.id})` })
       .from(speeches)
@@ -58,7 +57,6 @@ export class PostgresAnalyticsReader implements AnalyticsReader {
       throw new Error("Counting speeches returned no row");
     }
 
-    // Get distribution data per mistake category
     const rows = await this.database
       .select({
         category: mistakeFrequencies.category,
@@ -100,7 +98,6 @@ export class PostgresAnalyticsReader implements AnalyticsReader {
         speeches.createdAt,
       );
 
-    // Get time series points
     const rows = await this.database
       .select({
         time,

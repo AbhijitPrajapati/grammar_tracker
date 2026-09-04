@@ -26,7 +26,7 @@ const analysisDocumentSchema = z.object({
 
 export type AnalysisDocument = z.infer<typeof analysisDocumentSchema>;
 
-// Convert between JSONB output and Analysis
+// Convert between JSONB and Analysis
 
 export function analysisToDocument(analysis: Analysis): AnalysisDocument {
   return {

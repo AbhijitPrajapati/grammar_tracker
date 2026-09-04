@@ -16,7 +16,6 @@ export interface MistakeProperties {
   readonly explanation: string;
 }
 
-// A single mistake
 export class Mistake implements MistakeProperties {
   readonly category: MistakeCategory;
   readonly originalText: string;
@@ -38,7 +37,6 @@ export interface CategoryFrequencyProperties {
   readonly opportunities: number;
 }
 
-// Category frequencies tored in Postgres for easy analytics
 export class CategoryFrequency implements CategoryFrequencyProperties {
   readonly category: MistakeCategory;
   readonly occurrences: number;
@@ -59,7 +57,6 @@ export class CategoryFrequency implements CategoryFrequencyProperties {
   }
 }
 
-// Displayed to user as error rate
 export function errorRate(frequency: {
   readonly occurrences: number;
   readonly opportunities: number;
@@ -75,7 +72,6 @@ export interface AnalysisProperties {
   readonly feedback: string;
 }
 
-// Complete analysis structure
 export class Analysis {
   readonly mistakes: readonly Mistake[];
   readonly frequencies: readonly CategoryFrequency[];
@@ -87,7 +83,6 @@ export class Analysis {
     );
     const frequencyCategories = frequencies.map(({ category }) => category);
 
-    // Validation
     if (new Set(frequencyCategories).size !== frequencyCategories.length) {
       throw new Error("Analysis frequencies must be unique by category");
     }

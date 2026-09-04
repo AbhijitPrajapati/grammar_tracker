@@ -17,7 +17,6 @@ import { toSpeechView, type SpeechView } from "../view-models";
 export async function processSpeechAction(
   input: StagedAudioReference,
 ): Promise<ActionState<SpeechView | undefined>> {
-  // Verify valid audio reference
   const parsed = stagedAudioReferenceSchema.safeParse(input);
   if (!parsed.success) {
     return {

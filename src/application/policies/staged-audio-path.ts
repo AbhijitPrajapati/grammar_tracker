@@ -15,7 +15,6 @@ export interface ValidatedStagedAudioPath {
   readonly extension: AllowedAudioExtension;
 }
 
-// Constructs audio prefix from userId
 function stagedAudioOwnerPrefix(userId: UserId): string {
   if (!SAFE_OWNER_SEGMENT.test(userId)) {
     throw new InvalidAudio("Invalid staged audio owner");
@@ -35,7 +34,6 @@ export function buildStagedAudioPathname(
 }
 
 // Enforces ownership and one fixed slot for each supported format
-// Called from multiple origins
 export function validateStagedAudioPathname(
   userId: UserId,
   pathname: string,
@@ -53,7 +51,6 @@ export function validateStagedAudioPathname(
   const basename = pathname.slice(prefix.length);
   const match = STAGED_AUDIO_BASENAME.exec(basename);
   const extension = match?.[1] ?? "";
-  // Check for allowed extention
   if (!isAllowedAudioExtension(extension)) {
     throw new InvalidAudio("Invalid staged audio pathname");
   }

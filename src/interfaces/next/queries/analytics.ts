@@ -10,7 +10,6 @@ import {
   type AnalyticsDashboardView,
 } from "../view-models";
 
-// Interfaces for analytics selections
 export const DATE_RANGE_OPTIONS = [
   { value: "all_time", label: "All Time" },
   { value: "yearly", label: "Yearly" },

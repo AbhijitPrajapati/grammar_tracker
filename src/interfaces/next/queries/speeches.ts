@@ -11,5 +11,5 @@ export async function listCurrentUserSpeeches(): Promise<
   const speeches = await getApplicationContainer().listSpeeches.execute(
     user.id,
   );
-  return speeches.map(toSpeechView); // Map all speeches to client-facing SpeechView
+  return speeches.map(toSpeechView);
 }

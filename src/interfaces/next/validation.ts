@@ -31,16 +31,13 @@ export const passwordChangeSchema = z
     message: "New passwords do not match.",
   });
 
-// Validation for input speechId during deletion
 export const speechIdSchema = z.uuid();
 
-// Validation for pathname and etag of uploaded audio
 export const stagedAudioReferenceSchema = z.object({
   pathname: z.string().min(1).max(1_024),
   etag: z.string().min(1).max(512),
 });
 
-// Analytics settings selections
 export const dateRangeSelectionSchema = z
   .enum(["all_time", "yearly", "monthly", "weekly"])
   .catch("monthly");

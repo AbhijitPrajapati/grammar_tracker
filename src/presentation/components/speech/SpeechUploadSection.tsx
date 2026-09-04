@@ -46,10 +46,9 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   // User-facing errors
   const [clientError, setClientError] = useState<string | null>(null);
-  // Contains the result of the upload + processing
+  // Contains the result of processing
   const [actionState, setActionState] =
     useState<SpeechActionState>(INITIAL_STATE);
-  // Uploading and processing are seperate processes
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, startProcessing] = useTransition();
 
@@ -101,8 +100,6 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
             }),
           );
         } catch {
-          // Catches errors relating to reaching the action itself
-          // Errors returned by the action are pushed to the action state automatically
           setActionState({ status: "error", message: "Upload failed" });
         }
       });

@@ -43,7 +43,6 @@ export interface ApplicationContainer {
 
 let applicationContainer: ApplicationContainer | undefined;
 
-/** The application's only composition root. No domain or use-case imports a framework. */
 export function getApplicationContainer(): ApplicationContainer {
   applicationContainer ??= createApplicationContainer();
   return applicationContainer;
@@ -83,8 +82,6 @@ export function createApplicationContainer(): ApplicationContainer {
   } else {
     const apiKey = environment.openAiApiKey;
     if (!apiKey) {
-      // The environment parser owns this invariant. Keep the composition root
-      // safe if a future configuration source bypasses that parser.
       throw new Error("OPENAI_API_KEY is required");
     }
     const client = new OpenAiClient({

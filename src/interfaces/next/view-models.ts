@@ -5,7 +5,7 @@ import type {
 } from "@/src/domain/analytics";
 import type { Speech } from "@/src/domain/speech";
 
-// Contains client-side representations for speeeches and analytics
+// Client-side representations for speeeches and analytics
 export interface SpeechView {
   readonly id: string;
   readonly createdAt: string;
@@ -38,7 +38,6 @@ export interface SpeechView {
   };
 }
 
-// Map domain Speech value to client-side SpeechView (userId is ommited)
 export function toSpeechView(speech: Speech): SpeechView {
   return {
     id: speech.id,

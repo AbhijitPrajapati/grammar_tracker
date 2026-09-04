@@ -8,7 +8,6 @@ export interface AudioSampleProperties {
   readonly openStream: () => Promise<ReadableStream<Uint8Array>>;
 }
 
-// Represents the audio sample itself
 export class AudioSample implements AudioSampleProperties {
   static readonly MAX_CONTENT_BYTES = MAX_AUDIO_INPUT_BYTES;
 
@@ -41,7 +40,7 @@ export class AudioSample implements AudioSampleProperties {
     Object.freeze(this);
   }
 
-  /** A fresh stream is returned for each deliberate provider attempt or retry. */
+  // Return a fresh stream for each retry
   openStream(): Promise<ReadableStream<Uint8Array>> {
     return this.streamFactory();
   }

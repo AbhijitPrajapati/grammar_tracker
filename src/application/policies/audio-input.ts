@@ -33,7 +33,6 @@ export const ALLOWED_AUDIO_CONTENT_TYPES = [
 export type AllowedAudioContentType =
   (typeof ALLOWED_AUDIO_CONTENT_TYPES)[number];
 
-// Mapping from extension to compatible content types
 const CONTENT_TYPES_BY_EXTENSION: Readonly<
   Record<AllowedAudioExtension, readonly AllowedAudioContentType[]>
 > = {

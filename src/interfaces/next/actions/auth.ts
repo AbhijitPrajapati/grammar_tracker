@@ -13,7 +13,6 @@ export async function authenticateAction(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  // Verify valid form input
   const parsed = authFormSchema.safeParse({
     mode: formData.get("mode"),
     email: formData.get("email"),
@@ -52,7 +51,6 @@ export async function authenticateAction(
     );
   }
 
-  // Save the token to start the session
   await setSessionCookie(token);
   redirect("/");
 }

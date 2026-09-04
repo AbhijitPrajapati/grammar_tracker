@@ -94,7 +94,6 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
     storeId: string,
     private readonly client: PrivateBlobClient = defaultBlobClient,
   ) {
-    // Valid storeId
     if (storeId.length === 0 || storeId !== storeId.trim()) {
       throw new TypeError("A Vercel Blob store ID is required");
     }
@@ -133,7 +132,6 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
           useCache: false,
           storeId: this.storeId,
         });
-        // Ensure audio was found
         if (result === null || result.statusCode !== 200 || !result.stream) {
           throw new InvalidAudio("Staged audio was not found");
         }
@@ -160,7 +158,7 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
   }
 }
 
-// Ensures a valid incoming audio reference
+// Validates incoming audio reference
 function validateStagedAudioReference(
   userId: UserId,
   reference: StagedAudioReference,
@@ -172,7 +170,7 @@ function validateStagedAudioReference(
   };
 }
 
-// Make sure etag does not contain unexpected characters
+// Ensure etag does not contain unexpected characters
 function validateStagedAudioEtag(etag: string): string {
   if (
     typeof etag !== "string" ||

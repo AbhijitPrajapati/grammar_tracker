@@ -41,7 +41,7 @@ export class ProcessSpeech {
       }
       throw error;
     } finally {
-      // Cleanup the staged audio file
+      // Report errors cleaning up staged audio
       await this.stagedAudio.delete(userId, reference).catch((error) => {
         this.reportCleanupFailure(error);
       });
