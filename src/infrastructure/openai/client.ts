@@ -17,6 +17,7 @@ export interface OpenAiOperationResult<T> {
   readonly requestId: string | null;
 }
 
+// Encapsulates retry logic
 export class OpenAiClient {
   readonly sdk: OpenAI;
   readonly maxRetries: number;

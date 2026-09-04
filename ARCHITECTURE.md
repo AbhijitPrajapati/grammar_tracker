@@ -61,8 +61,9 @@ The audio bypasses the Next.js request body because the supported 25 MiB size is
 larger than Vercel's Function body limit. `pathname` identifies the temporary
 object; `ETag` binds processing and deletion to the exact uploaded version.
 
-The daily cron invokes `CleanupAbandonedAudio` to delete uploads left behind by
-closed browsers or interrupted invocations. Cron does not process speeches.
+Uploads abandoned before processing can remain in Blob. This hobby deployment
+accepts that tradeoff and uses one bounded, overwritable slot per user and audio
+format. The normal processing path still attempts deletion after every outcome.
 
 ### Next.js Server Actions
 

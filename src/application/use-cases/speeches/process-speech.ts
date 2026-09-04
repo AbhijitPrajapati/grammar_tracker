@@ -1,11 +1,10 @@
 import { InferenceQuotaReached, AnalysisQuotaReached } from "../../errors";
 import type {
   AnalysisQuota,
-  GrammarAnalyzer,
-  StagedAudioReference,
+  SpeechAnalyzer,
   StagedAudioStore,
-  Transcriber,
 } from "../../ports/services";
+import type { StagedAudioReference } from "../../contracts/staged-audio";
 import type { SpeechRepository } from "../../ports/repositories";
 import type { Speech } from "../../../domain/speech";
 import type { UserId } from "../../../domain/user";
@@ -14,8 +13,7 @@ export class ProcessSpeech {
   constructor(
     private readonly stagedAudio: StagedAudioStore,
     private readonly speeches: SpeechRepository,
-    private readonly transcriber: Transcriber,
-    private readonly grammarAnalyzer: GrammarAnalyzer,
+    private readonly grammarAnalyzer: SpeechAnalyzer,
     private readonly quota: AnalysisQuota,
     private readonly reportCleanupFailure: (error: unknown) => void = () =>
       undefined,
@@ -31,9 +29,12 @@ export class ProcessSpeech {
         throw new AnalysisQuotaReached();
       }
 
-      const transcript = await this.transcriber.transcribe(audio);
-      const analysis = await this.grammarAnalyzer.analyze(transcript);
-      return await this.speeches.create(userId, transcript, analysis);
+      const response = await this.grammarAnalyzer.analyze(audio);
+      return await this.speeches.create(
+        userId,
+        response.transcript,
+        response.analysis,
+      );
     } catch (error) {
       if (error instanceof InferenceQuotaReached) {
         throw new AnalysisQuotaReached({ cause: error });

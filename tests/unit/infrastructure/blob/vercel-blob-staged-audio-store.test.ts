@@ -7,10 +7,8 @@ import {
   type PrivateBlobGetResult,
   type StagedAudioBlobMetadata,
 } from "@/src/infrastructure/blob";
-import {
-  MAX_STAGED_AUDIO_BYTES,
-  buildStagedAudioPathname,
-} from "@/src/application/contracts/staged-audio";
+import { MAX_STAGED_AUDIO_BYTES } from "@/src/application/contracts/audio-format";
+import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
 import { InvalidAudio } from "@/src/application/errors";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";
@@ -40,10 +38,12 @@ function metadata(
   };
 }
 
-function privateBlobClient(options: {
-  readonly head?: () => Promise<StagedAudioBlobMetadata>;
-  readonly get?: () => Promise<PrivateBlobGetResult | null>;
-} = {}) {
+function privateBlobClient(
+  options: {
+    readonly head?: () => Promise<StagedAudioBlobMetadata>;
+    readonly get?: () => Promise<PrivateBlobGetResult | null>;
+  } = {},
+) {
   const head = vi.fn<PrivateBlobClient["head"]>(
     options.head ?? (async () => metadata()),
   );
@@ -149,10 +149,7 @@ describe("VercelBlobStagedAudioStore", () => {
 
   it.each([
     ["missing result", null],
-    [
-      "unexpected status",
-      { statusCode: 304, stream: null, blob: metadata() },
-    ],
+    ["unexpected status", { statusCode: 304, stream: null, blob: metadata() }],
     [
       "changed pathname",
       {
@@ -249,8 +246,8 @@ describe("VercelBlobStagedAudioStore", () => {
     expect(() => new VercelBlobStagedAudioStore("", fake.client)).toThrow(
       TypeError,
     );
-    expect(() => new VercelBlobStagedAudioStore(" store ", fake.client)).toThrow(
-      TypeError,
-    );
+    expect(
+      () => new VercelBlobStagedAudioStore(" store ", fake.client),
+    ).toThrow(TypeError);
   });
 });

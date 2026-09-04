@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getApplicationContainer } from "@/src/bootstrap/container";
-import type { StagedAudioReference } from "@/src/application/ports/services";
+import type { StagedAudioReference } from "@/src/application/contracts/staged-audio";
 import { actionError } from "../action-error";
 import type { ActionState } from "../action-state";
 import { requireCurrentUser } from "../session";
@@ -60,7 +60,6 @@ export async function deleteSpeechAction(
 }
 
 function revalidateSpeechViews(): void {
-  revalidatePath("/");
   revalidatePath("/speeches");
   revalidatePath("/analytics");
 }

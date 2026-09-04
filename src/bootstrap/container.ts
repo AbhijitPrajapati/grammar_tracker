@@ -3,7 +3,6 @@ import "server-only";
 import { Redis } from "@upstash/redis";
 
 import {
-  CleanupAbandonedAudio,
   ChangePassword,
   DeleteSpeech,
   DeleteUser,
@@ -16,18 +15,11 @@ import {
 } from "@/src/application/use-cases";
 import { Argon2PasswordHasher } from "@/src/infrastructure/auth/argon2-password-hasher";
 import { JwtTokenService } from "@/src/infrastructure/auth/jwt-token-service";
-import {
-  VercelBlobStagedAudioJanitor,
-  VercelBlobStagedAudioStore,
-} from "@/src/infrastructure/blob";
+import { VercelBlobStagedAudioStore } from "@/src/infrastructure/blob";
 import { getServerEnvironment } from "@/src/infrastructure/config/env";
-import {
-  DeterministicGrammarAnalyzer,
-  DeterministicTranscriber,
-} from "@/src/infrastructure/openai/deterministic";
+import { DeterministicSpeechAnalyzer } from "@/src/infrastructure/openai/deterministic";
 import { OpenAiClient } from "@/src/infrastructure/openai/client";
-import { OpenAiGrammarAnalyzer } from "@/src/infrastructure/openai/grammar-analyzer";
-import { OpenAiTranscriber } from "@/src/infrastructure/openai/transcriber";
+import { OpenAiSpeechAnalyzer } from "@/src/infrastructure/openai/speech-analyzer";
 import {
   PostgresAnalyticsReader,
   PostgresSpeechRepository,
@@ -46,7 +38,6 @@ export interface ApplicationContainer {
   readonly listSpeeches: ListSpeeches;
   readonly deleteSpeech: DeleteSpeech;
   readonly retrieveAnalyticsDashboard: RetrieveAnalyticsDashboard;
-  readonly cleanupAbandonedAudio: CleanupAbandonedAudio;
 }
 
 let applicationContainer: ApplicationContainer | undefined;
@@ -80,11 +71,9 @@ export function createApplicationContainer(): ApplicationContainer {
     },
   );
 
-  let transcriber;
   let grammarAnalyzer;
   if (environment.analyzerMode === "deterministic") {
-    transcriber = new DeterministicTranscriber();
-    grammarAnalyzer = new DeterministicGrammarAnalyzer();
+    grammarAnalyzer = new DeterministicSpeechAnalyzer();
   } else {
     const apiKey = environment.openAiApiKey;
     if (!apiKey) {
@@ -98,12 +87,9 @@ export function createApplicationContainer(): ApplicationContainer {
       timeoutMs: environment.openAiTimeoutMs,
       maxRetries: environment.openAiMaxRetries,
     });
-    transcriber = new OpenAiTranscriber(
+    grammarAnalyzer = new OpenAiSpeechAnalyzer(
       client,
       environment.openAiTranscriptionModel,
-    );
-    grammarAnalyzer = new OpenAiGrammarAnalyzer(
-      client,
       environment.openAiAnalysisModel,
     );
   }
@@ -111,10 +97,6 @@ export function createApplicationContainer(): ApplicationContainer {
   const stagedAudioStore = new VercelBlobStagedAudioStore(
     environment.blobStoreId,
   );
-  const stagedAudioJanitor = new VercelBlobStagedAudioJanitor(
-    environment.blobStoreId,
-  );
-
   return Object.freeze({
     registerAndStartSession: new RegisterAndStartSession(
       users,
@@ -128,7 +110,6 @@ export function createApplicationContainer(): ApplicationContainer {
     processSpeech: new ProcessSpeech(
       stagedAudioStore,
       speeches,
-      transcriber,
       grammarAnalyzer,
       quota,
       (error) => {
@@ -144,6 +125,5 @@ export function createApplicationContainer(): ApplicationContainer {
     listSpeeches: new ListSpeeches(speeches),
     deleteSpeech: new DeleteSpeech(speeches),
     retrieveAnalyticsDashboard: new RetrieveAnalyticsDashboard(analytics),
-    cleanupAbandonedAudio: new CleanupAbandonedAudio(stagedAudioJanitor),
   });
 }

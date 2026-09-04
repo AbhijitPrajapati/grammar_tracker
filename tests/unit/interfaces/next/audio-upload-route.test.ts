@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ALLOWED_AUDIO_CONTENT_TYPES,
   MAX_STAGED_AUDIO_BYTES,
-  buildStagedAudioPathname,
-} from "@/src/application/contracts/staged-audio";
+} from "@/src/application/contracts/audio-format";
+import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
 import { POST } from "@/app/api/uploads/audio/route";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";

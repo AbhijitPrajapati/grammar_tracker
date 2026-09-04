@@ -8,8 +8,8 @@ import { NextResponse } from "next/server";
 import {
   ALLOWED_AUDIO_CONTENT_TYPES,
   MAX_STAGED_AUDIO_BYTES,
-  validateStagedAudioPathname,
-} from "@/src/application/contracts/staged-audio";
+} from "@/src/application/contracts/audio-format";
+import { validateStagedAudioPathname } from "@/src/application/contracts/staged-audio";
 import { getServerEnvironment } from "@/src/infrastructure/config/env";
 import { getLogger } from "@/src/infrastructure/observability/logger";
 import { getCurrentUser } from "@/src/interfaces/next/session";

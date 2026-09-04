@@ -20,7 +20,6 @@ const ENVIRONMENT_KEYS = [
   "UPSTASH_REDIS_REST_TOKEN",
   "BLOB_STORE_ID",
   "BLOB_WEBHOOK_PUBLIC_KEY",
-  "CRON_SECRET",
   "ANALYZER_MODE",
   "LOG_LEVEL",
   "VERCEL_ENV",
@@ -36,14 +35,14 @@ function clearEnvironment(): void {
 
 function setBaseEnvironment(): void {
   Object.assign(process.env, {
-    DATABASE_URL: "postgresql://grammar_tracker:password@db.test/grammar_tracker",
+    DATABASE_URL:
+      "postgresql://grammar_tracker:password@db.test/grammar_tracker",
     JWT_SECRET: "test-jwt-secret",
     ANALYZER_MODE: "deterministic",
     UPSTASH_REDIS_REST_URL: "https://redis.test",
     UPSTASH_REDIS_REST_TOKEN: "redis-token",
     BLOB_STORE_ID: "store_test",
     BLOB_WEBHOOK_PUBLIC_KEY: "test-webhook-public-key",
-    CRON_SECRET: "cron-secret",
   });
 }
 
@@ -109,11 +108,13 @@ describe("server environment", () => {
     "UPSTASH_REDIS_REST_TOKEN",
     "BLOB_STORE_ID",
     "BLOB_WEBHOOK_PUBLIC_KEY",
-    "CRON_SECRET",
-  ] as const)("requires %s on the application's single deployment path", (key) => {
-    delete process.env[key];
-    expect(() => reparseEnvironment()).toThrow();
-  });
+  ] as const)(
+    "requires %s on the application's single deployment path",
+    (key) => {
+      delete process.env[key];
+      expect(() => reparseEnvironment()).toThrow();
+    },
+  );
 
   it("forbids the deterministic fixture in Vercel production", () => {
     setProductionEnvironment();

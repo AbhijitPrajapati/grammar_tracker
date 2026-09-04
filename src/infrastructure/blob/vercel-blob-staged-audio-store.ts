@@ -8,25 +8,16 @@ import {
 } from "@vercel/blob";
 
 import { AudioSample } from "@/src/application/contracts/audio";
+import type { StagedAudioReference } from "@/src/application/contracts/staged-audio";
+import { validateStagedAudioPathname } from "@/src/application/contracts/staged-audio";
 import { InvalidAudio } from "@/src/application/errors";
-import type {
-  StagedAudioReference,
-  StagedAudioStore,
-} from "@/src/application/ports/services";
+import type { StagedAudioStore } from "@/src/application/ports/services";
 import type { UserId } from "@/src/domain/user";
-
 import {
   validateStagedAudioEtag,
   validateStagedAudioMetadata,
-  validateStagedAudioPathname,
-} from "@/src/application/contracts/staged-audio";
-
-export interface StagedAudioBlobMetadata {
-  readonly pathname: unknown;
-  readonly etag: unknown;
-  readonly size: unknown;
-  readonly contentType: unknown;
-}
+  type StagedAudioBlobMetadata,
+} from "./staged-audio-metadata";
 
 interface HeadOptions {
   readonly storeId: string;
@@ -143,10 +134,7 @@ export class VercelBlobStagedAudioStore implements StagedAudioStore {
     });
   }
 
-  async delete(
-    userId: UserId,
-    reference: StagedAudioReference,
-  ): Promise<void> {
+  async delete(userId: UserId, reference: StagedAudioReference): Promise<void> {
     const pathname = validateStagedAudioPathname(
       userId,
       reference.pathname,

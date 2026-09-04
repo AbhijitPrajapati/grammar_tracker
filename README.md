@@ -36,7 +36,7 @@ Browser -- signed, short-lived upload grant --> private Vercel Blob
 Next.js -- authenticated, owner-scoped stream --> private Vercel Blob
 ```
 
-The browser is the only application client. Authenticated commands use Server Actions and reads happen in Server Components. The two HTTP route handlers are narrow infrastructure boundaries: issuing authenticated Blob upload grants and running Vercel Cron cleanup of abandoned staged objects.
+The browser is the only application client. Authenticated commands use Server Actions and reads happen in Server Components. The HTTP upload route is a narrow infrastructure boundary that issues authenticated Blob upload grants.
 
 Audio processing is sequential and deliberate:
 
@@ -46,7 +46,7 @@ Audio processing is sequential and deliberate:
 4. Stream the object into transcription with `gpt-4o-mini-transcribe`.
 5. Analyze the transcript with `o4-mini` and strict structured output.
 6. Persist the speech, version-2 analysis document, and frequency projection in one database transaction.
-7. Delete staged audio in a `finally` cleanup path. A daily authenticated cron removes old orphaned staging objects.
+7. Delete staged audio in a `finally` cleanup path.
 
 ## Clean Architecture
 
@@ -124,7 +124,7 @@ grammar_tracker/
 |-- docker-compose.dev.yaml              local Next.js + PostgreSQL
 |-- docker-compose.e2e.yaml              disposable deterministic test stack
 |-- Dockerfile                            local/E2E image
-`-- vercel.json                           Fluid compute and cleanup schedule
+`-- vercel.json                           Vercel deployment configuration
 ```
 
 ## Technology choices
@@ -137,8 +137,7 @@ grammar_tracker/
 | Database | PostgreSQL 16, `pg`, Drizzle ORM | Repository/read-model adapters |
 | Passwords | `argon2` | `PasswordHasher` adapter |
 | Sessions | `jose` | `TokenService` adapter and HTTP-only cookie boundary |
-| Transcription | OpenAI Node SDK, `gpt-4o-mini-transcribe` | `Transcriber` adapter |
-| Grammar analysis | OpenAI Responses structured output, `o4-mini` | `GrammarAnalyzer` adapter |
+| Speech analysis | OpenAI Node SDK with `gpt-4o-mini-transcribe` and `o4-mini` | `SpeechAnalyzer` adapter |
 | Analysis quota | Upstash Redis with one atomic Lua operation | `AnalysisQuota` adapter |
 | Staged audio | Private Vercel Blob with OIDC and presigned grants | `StagedAudioStore` adapter |
 | Logging | Pino structured logs with redaction | Observability adapter |
@@ -162,7 +161,6 @@ Copy `.env.example` to `.env.local` when running Next.js outside Compose. All va
 | `BLOB_STORE_ID` | Connected private Blob store identifier |
 | `VERCEL_OIDC_TOKEN` | Vercel-provided workload identity used by Blob SDK operations |
 | `BLOB_WEBHOOK_PUBLIC_KEY` | Vercel-provided key used to verify upload completion callbacks |
-| `CRON_SECRET` | Bearer secret for orphan cleanup; Vercel supplies it to cron invocations |
 
 ### Defaults and operational switches
 
@@ -178,7 +176,7 @@ Copy `.env.example` to `.env.local` when running Next.js outside Compose. All va
 | `ANALYZER_MODE` | `openai` | `deterministic` is allowed only outside Vercel production |
 | `LOG_LEVEL` | `info` | Pino level |
 
-Configuration validation fails closed if PostgreSQL, Redis, private Blob, cron, or session configuration is missing. OpenAI configuration is required in real-analysis mode, and deterministic analysis is forbidden in a Vercel production deployment. Blob staging and Upstash quotas are mandatory in every environment.
+Configuration validation fails closed if PostgreSQL, Redis, private Blob, or session configuration is missing. OpenAI configuration is required in real-analysis mode, and deterministic analysis is forbidden in a Vercel production deployment. Blob staging and Upstash quotas are mandatory in every environment.
 
 The upload page's server work has a 300-second function duration. Configuration also proves that the two sequential OpenAI operations, including every configured retry, fit within a 280-second provider-time budget; the defaults are one retry and 60 seconds per attempt (at most 240 seconds total provider time), leaving headroom for Blob and database work.
 
@@ -259,9 +257,8 @@ Create one Vercel project using the repository root as its Root Directory and Ne
 3. Create an Upstash Redis database and provide its REST URL/token. A single Lua execution prunes expired attempts, checks both rolling limits, records an accepted attempt, and updates expiry atomically across Vercel instances.
 4. Configure the OpenAI key. Confirm the code-locked models remain `o4-mini` and `gpt-4o-mini-transcribe`; there are intentionally no model-name environment switches.
 5. Set the existing JWT secret before traffic moves so current sessions continue to verify.
-6. Configure `CRON_SECRET`. `vercel.json` enables Fluid compute and schedules `/api/cron/blob-cleanup` daily at 03:00 UTC.
 
-Direct browser-to-Blob staging is required in production because the 25 MiB application limit is larger than Vercel's function request-body limit. Private Blob is temporary transport, not durable application data. Successful and failed processing paths attempt immediate deletion, while cron covers interrupted invocations and abandoned uploads.
+Direct browser-to-Blob staging is required in production because the 25 MiB application limit is larger than Vercel's function request-body limit. Private Blob is temporary transport, not durable application data. Successful and failed processing paths attempt immediate deletion. Uploads abandoned before processing may remain until they are overwritten or removed manually.
 
 ### Release checklist
 

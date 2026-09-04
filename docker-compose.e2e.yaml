@@ -32,7 +32,6 @@ services:
       BLOB_STORE_ID: ${BLOB_STORE_ID:?Set BLOB_STORE_ID before running E2E tests}
       VERCEL_OIDC_TOKEN: ${VERCEL_OIDC_TOKEN:?Set VERCEL_OIDC_TOKEN before running E2E tests}
       BLOB_WEBHOOK_PUBLIC_KEY: ${BLOB_WEBHOOK_PUBLIC_KEY:?Set BLOB_WEBHOOK_PUBLIC_KEY before running E2E tests}
-      CRON_SECRET: e2e-cron-secret
       LOG_LEVEL: warn
     ports:
       - "3100:3000"

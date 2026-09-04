@@ -1,4 +1,5 @@
 import { InvalidAudio } from "../errors";
+import { MAX_STAGED_AUDIO_BYTES } from "./audio-format";
 
 export interface AudioSampleProperties {
   readonly sizeBytes: number;
@@ -9,7 +10,7 @@ export interface AudioSampleProperties {
 
 // Represents the audio sample itself
 export class AudioSample implements AudioSampleProperties {
-  static readonly MAX_CONTENT_BYTES = 25 * 1024 * 1024;
+  static readonly MAX_CONTENT_BYTES = MAX_STAGED_AUDIO_BYTES;
 
   readonly sizeBytes: number;
   readonly filename: string;

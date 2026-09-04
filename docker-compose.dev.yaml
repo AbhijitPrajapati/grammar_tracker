@@ -42,7 +42,6 @@ services:
       BLOB_STORE_ID: ${BLOB_STORE_ID:?Set BLOB_STORE_ID in the root .env file}
       VERCEL_OIDC_TOKEN: ${VERCEL_OIDC_TOKEN:?Set VERCEL_OIDC_TOKEN in the root .env file}
       BLOB_WEBHOOK_PUBLIC_KEY: ${BLOB_WEBHOOK_PUBLIC_KEY:?Set BLOB_WEBHOOK_PUBLIC_KEY in the root .env file}
-      CRON_SECRET: ${CRON_SECRET:-local-cron-secret-not-used-by-compose}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "3000:3000"

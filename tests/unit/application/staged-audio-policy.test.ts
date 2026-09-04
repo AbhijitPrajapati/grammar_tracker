@@ -1,26 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { InvalidAudio } from "@/src/application/errors";
+import { AudioSample } from "@/src/application/contracts/audio";
 import {
   ALLOWED_AUDIO_CONTENT_TYPES,
   ALLOWED_AUDIO_EXTENSIONS,
-  buildStagedAudioPathname,
   isAudioContentTypeAllowedForExtension,
-  isOwnedStagedAudioPathname,
   MAX_STAGED_AUDIO_BYTES,
+} from "@/src/application/contracts/audio-format";
+import {
+  buildStagedAudioPathname,
   stagedAudioOwnerPrefix,
   validateStagedAudioBasename,
-  validateStagedAudioEtag,
-  validateStagedAudioMetadata,
   validateStagedAudioPathname,
 } from "@/src/application/contracts/staged-audio";
-import { AudioSample } from "@/src/application/contracts/audio";
+import { InvalidAudio } from "@/src/application/errors";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";
 const OTHER_USER_ID = "87509066-5ed7-4b44-ab47-d49d75b94f20";
 
-describe("staged audio Blob policy", () => {
-  it("exports the OpenAI transcription formats and the domain size limit", () => {
+describe("staged audio policy", () => {
+  it("exports the OpenAI transcription formats and the audio size limit", () => {
     expect(ALLOWED_AUDIO_EXTENSIONS).toEqual([
       "flac",
       "mp3",
@@ -33,15 +32,14 @@ describe("staged audio Blob policy", () => {
       "webm",
     ]);
     expect(ALLOWED_AUDIO_CONTENT_TYPES).toContain("audio/webm");
-    expect(ALLOWED_AUDIO_CONTENT_TYPES.every((type) => type.startsWith("audio/")))
-      .toBe(true);
+    expect(
+      ALLOWED_AUDIO_CONTENT_TYPES.every((type) => type.startsWith("audio/")),
+    ).toBe(true);
     expect(MAX_STAGED_AUDIO_BYTES).toBe(AudioSample.MAX_CONTENT_BYTES);
   });
 
   it("builds the exact authenticated-owner slot for a supported format", () => {
-    expect(stagedAudioOwnerPrefix(USER_ID)).toBe(
-      `speech-staging/${USER_ID}/`,
-    );
+    expect(stagedAudioOwnerPrefix(USER_ID)).toBe(`speech-staging/${USER_ID}/`);
     expect(buildStagedAudioPathname(USER_ID, "webm")).toBe(
       `speech-staging/${USER_ID}/audio.webm`,
     );
@@ -76,15 +74,16 @@ describe("staged audio Blob policy", () => {
     const other = buildStagedAudioPathname(OTHER_USER_ID, "wav");
     const collision = `speech-staging/${USER_ID}-other/audio.wav`;
 
-    expect(isOwnedStagedAudioPathname(USER_ID, owned)).toBe(true);
-    expect(isOwnedStagedAudioPathname(USER_ID, other)).toBe(false);
-    expect(isOwnedStagedAudioPathname(USER_ID, collision)).toBe(false);
+    expect(validateStagedAudioPathname(USER_ID, owned).pathname).toBe(owned);
     expect(() => validateStagedAudioPathname(USER_ID, other)).toThrow(
+      /does not belong/,
+    );
+    expect(() => validateStagedAudioPathname(USER_ID, collision)).toThrow(
       /does not belong/,
     );
   });
 
-  it("rejects URLs and nested pathnames even when they mention the owner", () => {
+  it("rejects URLs, nested paths, and alternate filenames", () => {
     expect(() =>
       validateStagedAudioPathname(
         USER_ID,
@@ -105,7 +104,7 @@ describe("staged audio Blob policy", () => {
     ).toThrow(InvalidAudio);
   });
 
-  it("requires the content type to match both the allowlist and extension", () => {
+  it("requires the content type to match the extension", () => {
     expect(isAudioContentTypeAllowedForExtension("m4a", "audio/x-m4a")).toBe(
       true,
     );
@@ -118,59 +117,5 @@ describe("staged audio Blob policy", () => {
     expect(isAudioContentTypeAllowedForExtension("webm", "video/webm")).toBe(
       false,
     );
-  });
-
-  it("treats an ETag as opaque while rejecting empty or unsafe header values", () => {
-    expect(validateStagedAudioEtag('W/"opaque-value"')).toBe(
-      'W/"opaque-value"',
-    );
-    expect(() => validateStagedAudioEtag("")).toThrow(InvalidAudio);
-    expect(() => validateStagedAudioEtag("value with spaces")).toThrow(
-      InvalidAudio,
-    );
-    expect(() => validateStagedAudioEtag("value\r\nheader: injected")).toThrow(
-      InvalidAudio,
-    );
-  });
-
-  it("validates Blob metadata against the opaque pathname and ETag", () => {
-    const pathname = buildStagedAudioPathname(USER_ID, "webm");
-
-    expect(
-      validateStagedAudioMetadata(USER_ID, pathname, "etag-one", {
-        pathname,
-        etag: "etag-one",
-        size: MAX_STAGED_AUDIO_BYTES,
-        contentType: "audio/webm",
-      }),
-    ).toMatchObject({
-      pathname,
-      basename: "audio.webm",
-      extension: "webm",
-      etag: "etag-one",
-      size: MAX_STAGED_AUDIO_BYTES,
-      contentType: "audio/webm",
-    });
-  });
-
-  it.each([
-    ["changed pathname", { pathname: "speech-staging/wrong/file.webm" }],
-    ["changed ETag", { etag: "etag-two" }],
-    ["an empty file", { size: 0 }],
-    ["an oversized file", { size: MAX_STAGED_AUDIO_BYTES + 1 }],
-    ["a fractional size", { size: 1.5 }],
-    ["a non-audio MIME type", { contentType: "video/webm" }],
-    ["a MIME/extension mismatch", { contentType: "audio/mpeg" }],
-  ])("rejects metadata containing %s", (_case, override) => {
-    const pathname = buildStagedAudioPathname(USER_ID, "webm");
-    expect(() =>
-      validateStagedAudioMetadata(USER_ID, pathname, "etag-one", {
-        pathname,
-        etag: "etag-one",
-        size: 1_024,
-        contentType: "audio/webm",
-        ...override,
-      }),
-    ).toThrow(InvalidAudio);
   });
 });

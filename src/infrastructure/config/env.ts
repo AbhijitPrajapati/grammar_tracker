@@ -36,7 +36,6 @@ const serverEnvironmentSchema = z.object({
 
   BLOB_STORE_ID: z.string().min(1),
   BLOB_WEBHOOK_PUBLIC_KEY: z.string().min(1),
-  CRON_SECRET: z.string().min(1),
 
   ANALYZER_MODE: z.enum(["openai", "deterministic"]).default("openai"),
   LOG_LEVEL: z
@@ -96,7 +95,6 @@ function parseServerEnvironment(source: NodeJS.ProcessEnv) {
     upstashRedisRestToken: parsed.UPSTASH_REDIS_REST_TOKEN,
     blobStoreId: parsed.BLOB_STORE_ID,
     blobWebhookPublicKey: parsed.BLOB_WEBHOOK_PUBLIC_KEY,
-    cronSecret: parsed.CRON_SECRET,
     analyzerMode: parsed.ANALYZER_MODE,
     logLevel: parsed.LOG_LEVEL,
     isVercelProduction,

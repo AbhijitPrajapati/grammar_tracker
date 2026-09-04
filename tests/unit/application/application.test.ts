@@ -20,11 +20,10 @@ import {
   RetrieveAnalyticsDashboard,
   SpeechNotFound,
   type AnalysisQuota,
-  type GrammarAnalyzer,
+  type SpeechAnalyzer,
   type PasswordHasher,
   type StagedAudioStore,
   type TokenService,
-  type Transcriber,
   type AnalyticsReader,
   EmailConflictError,
   type SpeechRepository,
@@ -163,9 +162,8 @@ describe("authentication use cases", () => {
       new NewPassword("new-password"),
     );
 
-    assert.equal(result.user.email.value, "new@example.com");
-    assert.equal(result.session.userId, USER_ID);
-    assert.equal(result.session.sessionToken, `token:${USER_ID}`);
+    assert.equal(result.userId, USER_ID);
+    assert.equal(result.sessionToken, `token:${USER_ID}`);
     assert.equal(persistedHash, "hash:new-password");
   });
 
@@ -295,7 +293,7 @@ describe("speech use cases", () => {
         return "I spoke clearly.";
       },
     };
-    const analyzer: GrammarAnalyzer = {
+    const analyzer: SpeechAnalyzer = {
       analyze: async (transcript) => {
         calls.push(`analyze:${transcript}`);
         return analysis;

@@ -18,13 +18,13 @@ import { processSpeechAction } from "@/src/interfaces/next/actions/speeches";
 import type { ActionState } from "@/src/interfaces/next/action-state";
 import type { SpeechView } from "@/src/interfaces/next/view-models";
 import {
-  buildStagedAudioPathname,
   isAllowedAudioContentType,
   isAllowedAudioExtension,
   isAudioContentTypeAllowedForExtension,
   MAX_STAGED_AUDIO_BYTES,
   type AllowedAudioExtension,
-} from "@/src/application/contracts/staged-audio";
+} from "@/src/application/contracts/audio-format";
+import { buildStagedAudioPathname } from "@/src/application/contracts/staged-audio";
 
 type SpeechActionState = ActionState<SpeechView | undefined>;
 type AudioValidation =

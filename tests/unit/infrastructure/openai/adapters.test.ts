@@ -5,10 +5,10 @@ import { Analysis } from "@/src/domain/analysis";
 import type { OpenAiClient } from "@/src/infrastructure/openai/client";
 import {
   DETERMINISTIC_TRANSCRIPT,
-  DeterministicGrammarAnalyzer,
+  DeterministicSpeechAnalyzer,
   DeterministicTranscriber,
 } from "@/src/infrastructure/openai/deterministic";
-import { OpenAiGrammarAnalyzer } from "@/src/infrastructure/openai/grammar-analyzer";
+import { OpenAiSpeechAnalyzer } from "@/src/infrastructure/openai/speech-analyzer";
 import { OpenAiTranscriber } from "@/src/infrastructure/openai/transcriber";
 
 function stream(byte: number): ReadableStream<Uint8Array> {
@@ -123,7 +123,7 @@ describe("OpenAI adapters", () => {
       execute,
     } as unknown as OpenAiClient;
 
-    const result = await new OpenAiGrammarAnalyzer(client, "o4-mini").analyze(
+    const result = await new OpenAiSpeechAnalyzer(client, "o4-mini").analyze(
       "I go yesterday",
     );
 
@@ -190,13 +190,13 @@ describe("OpenAI adapters", () => {
     } as unknown as OpenAiClient;
 
     await expect(
-      new OpenAiGrammarAnalyzer(client, "o4-mini").analyze("Transcript"),
+      new OpenAiSpeechAnalyzer(client, "o4-mini").analyze("Transcript"),
     ).rejects.toThrow("did not satisfy the analysis schema");
   });
 
   it("preserves the deterministic E2E fixture exactly", async () => {
     const transcript = await new DeterministicTranscriber().transcribe();
-    const analysis = await new DeterministicGrammarAnalyzer().analyze();
+    const analysis = await new DeterministicSpeechAnalyzer().analyze();
 
     expect(transcript).toBe(DETERMINISTIC_TRANSCRIPT);
     expect(transcript).toBe("She go to the store yesterday and buy two apple.");

@@ -1,23 +1,19 @@
 import "server-only";
 
 import type {
-  GrammarAnalyzer,
-  Transcriber,
+  SpeechAnalysisResult,
+  SpeechAnalyzer,
 } from "@/src/application/ports/services";
 import { Analysis } from "@/src/domain/analysis";
+import { AudioSample } from "@/src/application/contracts/audio";
 
 export const DETERMINISTIC_TRANSCRIPT =
   "She go to the store yesterday and buy two apple.";
 
-export class DeterministicTranscriber implements Transcriber {
-  async transcribe(): Promise<string> {
-    return DETERMINISTIC_TRANSCRIPT;
-  }
-}
-
-export class DeterministicGrammarAnalyzer implements GrammarAnalyzer {
-  async analyze(): Promise<Analysis> {
-    return new Analysis({
+export class DeterministicSpeechAnalyzer implements SpeechAnalyzer {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async analyze(_audio: AudioSample): Promise<SpeechAnalysisResult> {
+    const analysis = new Analysis({
       mistakes: [
         {
           category: "subject_verb_agreement",
@@ -56,5 +52,6 @@ export class DeterministicGrammarAnalyzer implements GrammarAnalyzer {
       ],
       feedback: "Good effort. Focus on agreement, tense, and plural nouns.",
     });
+    return { analysis, transcript: DETERMINISTIC_TRANSCRIPT };
   }
 }
