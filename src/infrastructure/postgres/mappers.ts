@@ -4,6 +4,7 @@ import { EmailAddress, UserAccount } from "@/src/domain/user";
 
 import { analysisFromDocument } from "./analysis-document";
 
+// Convert from database rows to application models
 export interface UserPersistenceRow {
   readonly id: string;
   readonly email: string;

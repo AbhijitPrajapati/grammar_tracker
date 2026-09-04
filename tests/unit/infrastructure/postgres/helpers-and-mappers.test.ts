@@ -4,7 +4,7 @@ import {
   hasPostgresSqlState,
   mistakeCategoryFromDatabase,
   parsePostgresInteger,
-} from "@/src/infrastructure/postgres/helpers";
+} from "@/src/infrastructure/postgres/util";
 import {
   speechFromRow,
   storedUserFromRow,

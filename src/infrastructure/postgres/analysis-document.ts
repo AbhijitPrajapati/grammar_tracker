@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-import {
-  Analysis,
-  MISTAKE_CATEGORIES,
-} from "@/src/domain/analysis";
+import { Analysis, MISTAKE_CATEGORIES } from "@/src/domain/analysis";
 
 export const ANALYSIS_DOCUMENT_VERSION = 2 as const;
 
@@ -28,6 +25,8 @@ const analysisDocumentSchema = z.object({
 });
 
 export type AnalysisDocument = z.infer<typeof analysisDocumentSchema>;
+
+// Convert between JSONB output and Analysis
 
 export function analysisToDocument(analysis: Analysis): AnalysisDocument {
   return {

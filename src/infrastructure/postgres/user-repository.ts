@@ -1,9 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import type {
-  EmailAddress,
-  UserId,
-} from "@/src/domain/user";
+import type { EmailAddress, UserId } from "@/src/domain/user";
 import {
   EmailConflictError,
   type StoredUser,
@@ -11,14 +8,14 @@ import {
 } from "@/src/application/ports/repositories";
 
 import { getDatabase } from "./client";
-import { hasPostgresSqlState } from "./helpers";
+import { hasPostgresSqlState } from "./util";
 import { storedUserFromRow } from "./mappers";
 import { users } from "./schema";
 
-type Database = ReturnType<typeof getDatabase>;
-
 export class PostgresUserRepository implements UserRepository {
-  constructor(private readonly database: Database = getDatabase()) {}
+  constructor(
+    private readonly database: ReturnType<typeof getDatabase> = getDatabase(),
+  ) {}
 
   async create(email: EmailAddress, passwordHash: string): Promise<StoredUser> {
     let returned: (typeof users.$inferSelect)[];
@@ -28,6 +25,7 @@ export class PostgresUserRepository implements UserRepository {
         .values({ email: email.value, passwordHash })
         .returning();
     } catch (error) {
+      // Detect uniqueness violation
       if (hasPostgresSqlState(error, "23505")) {
         throw new EmailConflictError(undefined, { cause: error });
       }

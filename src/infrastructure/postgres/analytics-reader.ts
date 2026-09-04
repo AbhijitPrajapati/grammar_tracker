@@ -11,11 +11,10 @@ import { CategoryFrequency, type MistakeCategory } from "@/src/domain/analysis";
 import type { UserId } from "@/src/domain/user";
 
 import { getDatabase } from "./client";
-import { mistakeCategoryFromDatabase, parsePostgresInteger } from "./helpers";
+import { mistakeCategoryFromDatabase, parsePostgresInteger } from "./util";
 import { mistakeFrequencies, speeches } from "./schema";
 
-type Database = ReturnType<typeof getDatabase>;
-
+// Common filter condition: user ownership + in time range
 function speechScope(userId: UserId, dateRange: DateRange): SQL {
   const predicates: SQL[] = [eq(speeches.userId, userId)];
   if (dateRange.start !== null) {
@@ -42,13 +41,17 @@ function bucketLiteral(bucket: TimeBucket): SQL {
 }
 
 export class PostgresAnalyticsReader implements AnalyticsReader {
-  constructor(private readonly database: Database = getDatabase()) {}
+  constructor(
+    private readonly database: ReturnType<typeof getDatabase> = getDatabase(),
+  ) {}
 
   async distribution(
     userId: UserId,
     dateRange: DateRange,
   ): Promise<Distribution> {
     const scope = speechScope(userId, dateRange);
+
+    // Count rows
     const [totalRow] = await this.database
       .select({ total: sql<unknown>`count(${speeches.id})` })
       .from(speeches)
@@ -57,6 +60,7 @@ export class PostgresAnalyticsReader implements AnalyticsReader {
       throw new Error("Counting speeches returned no row");
     }
 
+    // Get distribution data per mistake category
     const rows = await this.database
       .select({
         category: mistakeFrequencies.category,
@@ -97,6 +101,8 @@ export class PostgresAnalyticsReader implements AnalyticsReader {
       sql<Date>`date_trunc(${bucketLiteral(bucket)}, ${speeches.createdAt})`.mapWith(
         speeches.createdAt,
       );
+
+    // Get time series points
     const rows = await this.database
       .select({
         time,

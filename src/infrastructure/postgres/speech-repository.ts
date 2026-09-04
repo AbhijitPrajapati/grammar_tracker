@@ -10,10 +10,10 @@ import { getDatabase } from "./client";
 import { speechFromRow } from "./mappers";
 import { mistakeFrequencies, speeches } from "./schema";
 
-type Database = ReturnType<typeof getDatabase>;
-
 export class PostgresSpeechRepository implements SpeechRepository {
-  constructor(private readonly database: Database = getDatabase()) {}
+  constructor(
+    private readonly database: ReturnType<typeof getDatabase> = getDatabase(),
+  ) {}
 
   async create(
     userId: UserId,
@@ -33,6 +33,7 @@ export class PostgresSpeechRepository implements SpeechRepository {
         throw new Error("Creating a speech returned no row");
       }
 
+      // Insert into analytics table if entries exist
       if (analysis.frequencies.length > 0) {
         await transaction.insert(mistakeFrequencies).values(
           analysis.frequencies.map((frequency) => ({

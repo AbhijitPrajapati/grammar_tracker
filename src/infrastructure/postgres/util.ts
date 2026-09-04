@@ -4,10 +4,8 @@ import { MISTAKE_CATEGORIES } from "@/src/domain/analysis";
 const MIN_SAFE_INTEGER = BigInt(Number.MIN_SAFE_INTEGER);
 const MAX_SAFE_INTEGER = BigInt(Number.MAX_SAFE_INTEGER);
 
-/**
- * PostgreSQL returns int8 aggregates as strings by default. Convert without
- * silently rounding values outside JavaScript's safe-integer range.
- */
+// count() and other aggregates use int8 / bigint, which may be returned as strings
+// This helper converts those values into JS numbers
 export function parsePostgresInteger(
   value: unknown,
   fieldName = "PostgreSQL integer",
@@ -34,7 +32,7 @@ export function parsePostgresInteger(
   return Number(integer);
 }
 
-/** Finds a SQLSTATE on either a driver error or Drizzle's error wrapper. */
+// Finds SQLSTATE; Used for to check for uniqueness violation
 export function hasPostgresSqlState(error: unknown, sqlState: string): boolean {
   const visited = new Set<object>();
   let candidate: unknown = error;
