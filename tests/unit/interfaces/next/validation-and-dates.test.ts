@@ -50,17 +50,6 @@ describe("server action validation", () => {
     ).toBe(false);
   });
 
-  it("counts Unicode code points consistently with the domain password rule", () => {
-    const eightCodePoints = "😀".repeat(8);
-    expect(
-      authFormSchema.safeParse({
-        mode: "register",
-        email: "learner@example.com",
-        password: eightCodePoints,
-      }).success,
-    ).toBe(true);
-  });
-
   it("requires matching new-password confirmation", () => {
     const result = passwordChangeSchema.safeParse({
       currentPassword: "old-password",

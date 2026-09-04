@@ -13,7 +13,7 @@ const KEY_PREFIX = "grammar-tracker:analysis-quota";
 // one day old is still inside the rolling window.
 const QUOTA_KEY_TTL_MS = DAY_WINDOW_MS + 1;
 
-export interface UpstashAnalysisQuotaOptions {
+interface UpstashAnalysisQuotaOptions {
   readonly minuteLimit: number;
   readonly dayLimit: number;
 }

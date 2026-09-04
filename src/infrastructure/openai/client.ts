@@ -5,14 +5,14 @@ import OpenAI, { APIConnectionError, APIError, RateLimitError } from "openai";
 import { InferenceQuotaReached } from "@/src/application/errors";
 import { getLogger } from "../observability/logger";
 
-export interface OpenAiClientOptions {
+interface OpenAiClientOptions {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly timeoutMs: number;
   readonly maxRetries: number;
 }
 
-export interface OpenAiOperationResult<T> {
+interface OpenAiOperationResult<T> {
   readonly data: T;
   readonly requestId: string | null;
 }

@@ -17,15 +17,15 @@ export const DATE_RANGE_OPTIONS = [
   { value: "weekly", label: "Weekly" },
 ] as const;
 
-export type DateRangeSelection = (typeof DATE_RANGE_OPTIONS)[number]["value"];
+type DateRangeSelection = (typeof DATE_RANGE_OPTIONS)[number]["value"];
 
-export interface AnalyticsSelection {
+interface AnalyticsSelection {
   readonly dateRange: DateRangeSelection;
   readonly mistakeCategory: MistakeCategory;
 }
 
 // Result = input selection + dashboard
-export interface AnalyticsQueryResult extends AnalyticsSelection {
+interface AnalyticsQueryResult extends AnalyticsSelection {
   readonly dashboard: AnalyticsDashboardView;
 }
 

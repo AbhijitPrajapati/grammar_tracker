@@ -19,7 +19,7 @@ describe("JwtTokenService", () => {
     await expect(service.verify(token)).resolves.toBe(USER_ID);
   });
 
-  it("accepts a PyJWT-compatible token", async () => {
+  it("accepts a compatible token", async () => {
     const issuedAt = Math.floor(NOW.getTime() / 1_000);
     const token = await new SignJWT({})
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })

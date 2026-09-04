@@ -75,7 +75,7 @@ describe("immutable production database mapping", () => {
 
   it("keeps the disposable database fixture pinned to the live Alembic head", () => {
     const sql = readFileSync(
-      new URL("../../../../database/local-bootstrap.sql", import.meta.url),
+      new URL("../../../../localdb/bootstrap.sql", import.meta.url),
       "utf8",
     ).replace(/\s+/g, " ");
 

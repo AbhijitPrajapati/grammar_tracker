@@ -5,7 +5,7 @@ import { jwtVerify, SignJWT } from "jose";
 import type { TokenService } from "@/src/application/ports/services";
 import type { UserId } from "@/src/domain/user";
 
-export interface JwtTokenServiceOptions {
+interface JwtTokenServiceOptions {
   readonly secret: string;
   readonly expirationMinutes: number;
   readonly now?: () => Date;

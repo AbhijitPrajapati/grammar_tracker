@@ -6,7 +6,7 @@ import {
   type PrivateBlobClient,
   type PrivateBlobGetResult,
   type StagedAudioBlobMetadata,
-} from "@/src/infrastructure/blob";
+} from "@/src/infrastructure/blob/vercel-blob-staged-audio-store";
 import { MAX_AUDIO_INPUT_BYTES } from "@/src/application/policies/audio-input";
 import { InvalidAudio } from "@/src/application/errors";
 import { buildStagedAudioPathname } from "@/src/application/policies/staged-audio-path";

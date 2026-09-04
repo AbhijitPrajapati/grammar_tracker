@@ -9,7 +9,7 @@ export const MISTAKE_CATEGORIES = [
 
 export type MistakeCategory = (typeof MISTAKE_CATEGORIES)[number];
 
-export interface MistakeProperties {
+interface MistakeProperties {
   readonly category: MistakeCategory;
   readonly originalText: string;
   readonly correction: string;
@@ -31,7 +31,7 @@ export class Mistake implements MistakeProperties {
   }
 }
 
-export interface CategoryFrequencyProperties {
+interface CategoryFrequencyProperties {
   readonly category: MistakeCategory;
   readonly occurrences: number;
   readonly opportunities: number;
@@ -66,7 +66,7 @@ export function errorRate(frequency: {
     : frequency.occurrences / frequency.opportunities;
 }
 
-export interface AnalysisProperties {
+interface AnalysisProperties {
   readonly mistakes: readonly MistakeProperties[];
   readonly frequencies: readonly CategoryFrequencyProperties[];
   readonly feedback: string;

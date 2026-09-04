@@ -5,7 +5,7 @@ import { EmailAddress, UserAccount } from "@/src/domain/user";
 import { analysisFromDocument } from "./analysis-document";
 
 // Convert from database rows to application models
-export interface UserPersistenceRow {
+interface UserPersistenceRow {
   readonly id: string;
   readonly email: string;
   readonly passwordHash: string;
@@ -23,7 +23,7 @@ export function storedUserFromRow(row: UserPersistenceRow): StoredUser {
   };
 }
 
-export interface SpeechPersistenceRow {
+interface SpeechPersistenceRow {
   readonly id: string;
   readonly userId: string;
   readonly transcript: string;

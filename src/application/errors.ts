@@ -1,4 +1,4 @@
-export type ApplicationErrorCode =
+type ApplicationErrorCode =
   | "email_already_registered"
   | "invalid_audio"
   | "invalid_credentials"

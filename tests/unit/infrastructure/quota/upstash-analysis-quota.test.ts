@@ -1,7 +1,7 @@
 import type { Redis } from "@upstash/redis";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { UpstashAnalysisQuota } from "@/src/infrastructure/quota";
+import { UpstashAnalysisQuota } from "@/src/infrastructure/quota/upstash-analysis-quota";
 
 const USER_ID = "4fcd2c4d-c90b-4202-8b1f-f59cf95cced6";
 const DAY_WINDOW_MS = 86_400_000;

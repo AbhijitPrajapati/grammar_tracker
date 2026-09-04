@@ -3,7 +3,7 @@ import type { UserId } from "./user";
 
 export type SpeechId = string;
 
-export interface SpeechProperties {
+interface SpeechProperties {
   readonly id: SpeechId;
   readonly userId: UserId;
   readonly transcript: string;

@@ -44,7 +44,7 @@ const serverEnvironmentSchema = z.object({
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
 });
 
-export type ServerEnvironment = ReturnType<typeof parseServerEnvironment>;
+type ServerEnvironment = ReturnType<typeof parseServerEnvironment>;
 
 let cachedEnvironment: ServerEnvironment | undefined;
 

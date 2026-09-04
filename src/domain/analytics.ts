@@ -3,7 +3,7 @@ import type { CategoryFrequency, MistakeCategory } from "./analysis";
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1_000;
 
 // Null represents an open ended range
-export interface DateRangeProperties {
+interface DateRangeProperties {
   readonly start?: Date | null;
   readonly end?: Date | null;
 }
@@ -42,7 +42,7 @@ export interface Distribution {
   readonly totalSpeeches: number;
 }
 
-export interface TimeSeriesPoint {
+interface TimeSeriesPoint {
   readonly time: Date;
   readonly occurrences: number;
   readonly opportunities: number;
@@ -52,8 +52,7 @@ export interface TimeSeries {
   readonly points: readonly TimeSeriesPoint[];
 }
 
-export const TIME_BUCKETS = ["day", "week", "month", "year"] as const;
-export type TimeBucket = (typeof TIME_BUCKETS)[number];
+export type TimeBucket = "day" | "week" | "month" | "year";
 
 // Get time bucket from date range
 export function timeBucketFor(dateRange: DateRange): TimeBucket {

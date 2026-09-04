@@ -1,7 +1,7 @@
 import { InvalidAudio } from "../errors";
 import { MAX_AUDIO_INPUT_BYTES } from "../policies/audio-input";
 
-export interface AudioSampleProperties {
+interface AudioSampleProperties {
   readonly sizeBytes: number;
   readonly filename: string | null;
   readonly mediaType: string | null;

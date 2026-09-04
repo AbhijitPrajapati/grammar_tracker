@@ -41,7 +41,7 @@ export class NewPassword {
   }
 }
 
-export interface UserAccountProperties {
+interface UserAccountProperties {
   readonly id: UserId;
   readonly email: EmailAddress;
   readonly createdAt: Date;

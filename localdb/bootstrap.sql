@@ -1,6 +1,6 @@
--- Local/E2E bootstrap representation of the production schema at Alembic
--- revision 9b8ea2f7c1d0. The Next.js application never executes this file in
--- production and never applies DDL at runtime or during a Vercel build.
+-- Local/E2E bootstrap representation of the production schema
+-- The Next.js application never executes this file in
+-- production and never applies DDL at runtime or during a Vercel build
 
 CREATE EXTENSION IF NOT EXISTS citext;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

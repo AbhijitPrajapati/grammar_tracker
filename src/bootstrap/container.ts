@@ -12,10 +12,10 @@ import {
   RegisterAndStartSession,
   ResolveSession,
   RetrieveAnalyticsDashboard,
-} from "@/src/application/use-cases";
+} from "@/src/application";
 import { Argon2PasswordHasher } from "@/src/infrastructure/auth/argon2-password-hasher";
 import { JwtTokenService } from "@/src/infrastructure/auth/jwt-token-service";
-import { VercelBlobStagedAudioStore } from "@/src/infrastructure/blob";
+import { VercelBlobStagedAudioStore } from "@/src/infrastructure/blob/vercel-blob-staged-audio-store";
 import { getServerEnvironment } from "@/src/infrastructure/config/env";
 import { DeterministicSpeechAnalyzer } from "@/src/infrastructure/openai/deterministic";
 import { OpenAiClient } from "@/src/infrastructure/openai/client";
@@ -26,10 +26,10 @@ import {
   PostgresSpeechRepository,
   PostgresUserRepository,
 } from "@/src/infrastructure/postgres";
-import { UpstashAnalysisQuota } from "@/src/infrastructure/quota";
+import { UpstashAnalysisQuota } from "@/src/infrastructure/quota/upstash-analysis-quota";
 import { getLogger } from "@/src/infrastructure/observability/logger";
 
-export interface ApplicationContainer {
+interface ApplicationContainer {
   readonly registerAndStartSession: RegisterAndStartSession;
   readonly login: Login;
   readonly resolveSession: ResolveSession;
@@ -48,7 +48,7 @@ export function getApplicationContainer(): ApplicationContainer {
   return applicationContainer;
 }
 
-export function createApplicationContainer(): ApplicationContainer {
+function createApplicationContainer(): ApplicationContainer {
   const environment = getServerEnvironment();
 
   const database = getPostgresDatabase({

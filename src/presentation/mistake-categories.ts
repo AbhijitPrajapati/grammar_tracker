@@ -1,6 +1,6 @@
 import type { MistakeCategory } from "@/src/domain/analysis";
 
-export interface MistakeCategoryOption {
+interface MistakeCategoryOption {
   id: MistakeCategory;
   label: string;
 }

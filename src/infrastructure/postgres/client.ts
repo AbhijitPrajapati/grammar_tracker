@@ -8,7 +8,7 @@ import * as schema from "./schema";
 
 export type PostgresDatabase = NodePgDatabase<typeof schema>;
 
-export interface PostgresDatabaseOptions {
+interface PostgresDatabaseOptions {
   readonly databaseUrl: string;
   readonly poolMax: number;
 }
