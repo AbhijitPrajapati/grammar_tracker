@@ -7,15 +7,13 @@ import {
   type UserRepository,
 } from "@/src/application/ports/repositories";
 
-import { getDatabase } from "./client";
+import { PostgresDatabase } from "./client";
 import { hasPostgresSqlState } from "./util";
 import { storedUserFromRow } from "./mappers";
 import { users } from "./schema";
 
 export class PostgresUserRepository implements UserRepository {
-  constructor(
-    private readonly database: ReturnType<typeof getDatabase> = getDatabase(),
-  ) {}
+  constructor(private readonly database: PostgresDatabase) {}
 
   async create(email: EmailAddress, passwordHash: string): Promise<StoredUser> {
     let returned: (typeof users.$inferSelect)[];

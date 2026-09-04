@@ -4,22 +4,25 @@ import { attachDatabasePool } from "@vercel/functions";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-import { getServerEnvironment } from "../config/env";
 import * as schema from "./schema";
 
-type Database = NodePgDatabase<typeof schema>;
+export type PostgresDatabase = NodePgDatabase<typeof schema>;
+
+export interface PostgresDatabaseOptions {
+  readonly databaseUrl: string;
+  readonly poolMax: number;
+}
 
 const globalDatabase = globalThis as typeof globalThis & {
   grammarTrackerPool?: Pool;
-  grammarTrackerDatabase?: Database;
+  grammarTrackerDatabase?: PostgresDatabase;
 };
 
-function getPool(): Pool {
+function getPool(options: PostgresDatabaseOptions): Pool {
   if (!globalDatabase.grammarTrackerPool) {
-    const environment = getServerEnvironment();
     const pool = new Pool({
-      connectionString: environment.databaseUrl,
-      max: environment.databasePoolMax,
+      connectionString: options.databaseUrl,
+      max: options.poolMax,
       idleTimeoutMillis: 5_000,
       connectionTimeoutMillis: 10_000,
       allowExitOnIdle: process.env.NODE_ENV === "test",
@@ -30,7 +33,11 @@ function getPool(): Pool {
   return globalDatabase.grammarTrackerPool;
 }
 
-export function getDatabase(): Database {
-  globalDatabase.grammarTrackerDatabase ??= drizzle(getPool(), { schema });
+export function getPostgresDatabase(
+  options: PostgresDatabaseOptions,
+): PostgresDatabase {
+  globalDatabase.grammarTrackerDatabase ??= drizzle(getPool(options), {
+    schema,
+  });
   return globalDatabase.grammarTrackerDatabase;
 }

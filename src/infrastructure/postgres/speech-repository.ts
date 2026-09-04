@@ -6,14 +6,12 @@ import type { Speech, SpeechId } from "@/src/domain/speech";
 import type { UserId } from "@/src/domain/user";
 
 import { analysisToDocument } from "./analysis-document";
-import { getDatabase } from "./client";
+import { PostgresDatabase } from "./client";
 import { speechFromRow } from "./mappers";
 import { mistakeFrequencies, speeches } from "./schema";
 
 export class PostgresSpeechRepository implements SpeechRepository {
-  constructor(
-    private readonly database: ReturnType<typeof getDatabase> = getDatabase(),
-  ) {}
+  constructor(private readonly database: PostgresDatabase) {}
 
   async create(
     userId: UserId,

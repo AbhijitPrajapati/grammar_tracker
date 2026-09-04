@@ -21,6 +21,7 @@ import { DeterministicSpeechAnalyzer } from "@/src/infrastructure/openai/determi
 import { OpenAiClient } from "@/src/infrastructure/openai/client";
 import { OpenAiSpeechAnalyzer } from "@/src/infrastructure/openai/speech-analyzer";
 import {
+  getPostgresDatabase,
   PostgresAnalyticsReader,
   PostgresSpeechRepository,
   PostgresUserRepository,
@@ -51,9 +52,14 @@ export function getApplicationContainer(): ApplicationContainer {
 export function createApplicationContainer(): ApplicationContainer {
   const environment = getServerEnvironment();
 
-  const users = new PostgresUserRepository();
-  const speeches = new PostgresSpeechRepository();
-  const analytics = new PostgresAnalyticsReader();
+  const database = getPostgresDatabase({
+    databaseUrl: environment.databaseUrl,
+    poolMax: environment.databasePoolMax,
+  });
+
+  const users = new PostgresUserRepository(database);
+  const speeches = new PostgresSpeechRepository(database);
+  const analytics = new PostgresAnalyticsReader(database);
   const passwordHasher = new Argon2PasswordHasher();
   const tokens = new JwtTokenService({
     secret: environment.jwtSecret,

@@ -10,7 +10,7 @@ import type { AnalyticsReader } from "@/src/application/ports/repositories";
 import { CategoryFrequency, type MistakeCategory } from "@/src/domain/analysis";
 import type { UserId } from "@/src/domain/user";
 
-import { getDatabase } from "./client";
+import { PostgresDatabase } from "./client";
 import { mistakeCategoryFromDatabase, parsePostgresInteger } from "./util";
 import { mistakeFrequencies, speeches } from "./schema";
 
@@ -41,9 +41,7 @@ function bucketLiteral(bucket: TimeBucket): SQL {
 }
 
 export class PostgresAnalyticsReader implements AnalyticsReader {
-  constructor(
-    private readonly database: ReturnType<typeof getDatabase> = getDatabase(),
-  ) {}
+  constructor(private readonly database: PostgresDatabase) {}
 
   async distribution(
     userId: UserId,
