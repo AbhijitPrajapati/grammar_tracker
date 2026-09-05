@@ -15,41 +15,59 @@ export function SpeechResultCard({ speech }: SpeechResultCardProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-sm font-medium">Transcript</p>
-        <p className="text-sm text-muted-foreground">{speech.transcript}</p>
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-md border bg-muted/30 p-4">
+          <h3 className="text-sm font-medium">Transcript</h3>
+          <p className="mt-2 whitespace-pre-wrap wrap-break-word text-sm text-muted-foreground">
+            {speech.transcript}
+          </p>
+        </section>
+        <section className="rounded-md border bg-muted/30 p-4">
+          <h3 className="text-sm font-medium">Feedback</h3>
+          <p className="mt-2 whitespace-pre-wrap wrap-break-word text-sm text-muted-foreground">
+            {speech.analysis.feedback}
+          </p>
+        </section>
       </div>
-      <div>
-        <p className="text-sm font-medium">Feedback</p>
-        <p className="text-sm text-muted-foreground">
-          {speech.analysis.feedback}
-        </p>
-      </div>
-      <div>
-        <p className="text-sm font-medium">Detected mistakes</p>
+
+      <section>
+        <h3 className="text-sm font-medium">Detected mistakes</h3>
         {speech.analysis.mistakes.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             No grammar mistakes detected.
           </p>
         ) : (
-          <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+          <ul className="mt-3 grid items-start gap-3 text-sm text-muted-foreground md:grid-cols-2">
             {speech.analysis.mistakes.map((mistake, index) => (
               <li
                 key={`${mistake.category}-${index}`}
-                className="rounded-md border p-3"
+                className="space-y-2 rounded-md border p-4"
               >
                 <p className="font-medium text-foreground">
                   {mistakeCategoryLabel(mistake.category)}
                 </p>
-                <p>Original: {mistake.originalText}</p>
-                <p>Correction: {mistake.correction}</p>
-                <p>Explanation: {mistake.explanation}</p>
+                <p className="wrap-break-word">
+                  <span className="font-medium text-foreground">Original:</span>{" "}
+                  {mistake.originalText}
+                </p>
+                <p className="wrap-break-word">
+                  <span className="font-medium text-foreground">
+                    Correction:
+                  </span>{" "}
+                  {mistake.correction}
+                </p>
+                <p className="wrap-break-word">
+                  <span className="font-medium text-foreground">
+                    Explanation:
+                  </span>{" "}
+                  {mistake.explanation}
+                </p>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }

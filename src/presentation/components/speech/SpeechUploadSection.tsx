@@ -111,7 +111,7 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Upload audio</CardTitle>
@@ -124,27 +124,36 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
             className="space-y-4"
             onSubmit={(event) => void submitAudio(event)}
           >
-            <div className="space-y-2">
-              <Label htmlFor="audio-file">Audio clip</Label>
-              <Input
-                id="audio-file"
-                name="file"
-                type="file"
-                accept={AUDIO_FILE_ACCEPT}
-                required
-                disabled={isBusy}
-                onChange={(event) => {
-                  setFile(event.target.files?.[0] ?? null);
-                  setClientError(null);
-                  setActionState(INITIAL_STATE);
-                }}
-              />
-              <p className="text-sm text-muted-foreground">
-                Selected file: {fileName}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Supported audio formats up to 25 MiB.
-              </p>
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <div className="space-y-2">
+                <Label htmlFor="audio-file">Audio clip</Label>
+                <Input
+                  id="audio-file"
+                  name="file"
+                  type="file"
+                  accept={AUDIO_FILE_ACCEPT}
+                  required
+                  disabled={isBusy}
+                  onChange={(event) => {
+                    setFile(event.target.files?.[0] ?? null);
+                    setClientError(null);
+                    setActionState(INITIAL_STATE);
+                  }}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Selected file: {fileName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Supported audio formats up to 25 MiB.
+                </p>
+              </div>
+              <Button
+                className="w-full md:w-auto"
+                type="submit"
+                disabled={isBusy || file === null}
+              >
+                {busyLabel(isUploading, isProcessing, uploadProgress)}
+              </Button>
             </div>
             {clientError !== null || actionState.status === "error" ? (
               <p
@@ -156,9 +165,6 @@ export function SpeechUploadSection({ userId }: { readonly userId: string }) {
                   (actionState.status === "error" ? actionState.message : "")}
               </p>
             ) : null}
-            <Button type="submit" disabled={isBusy || file === null}>
-              {busyLabel(isUploading, isProcessing, uploadProgress)}
-            </Button>
           </form>
         </CardContent>
       </Card>
